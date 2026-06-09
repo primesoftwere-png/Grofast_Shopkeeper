@@ -32,7 +32,7 @@ const AddProduct = () => {
   const fetchCategories = async () => {
     try {
       const response = await getAllCategories();
-      const categoriesData = response?.categories || response?.data || response || [];
+      const categoriesData = response?.data?.categories || response?.data || response || [];
       setCategories(categoriesData);
     } catch (err) {
       console.error('Error fetching categories:', err);

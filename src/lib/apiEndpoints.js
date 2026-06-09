@@ -67,7 +67,8 @@ export const SETTINGS_ENDPOINTS = {
   BUSINESS_HOURS: '/api/shopkeeper/settings/business-hours',
   BANK_DETAILS: '/api/shopkeeper/settings/bank-details',
   PROFILE: '/api/shopkeeper/settings/profile',
-  CHANGE_PASSWORD: '/api/shopkeeper/settings/change-password',
+  LOCATION: '/api/shopkeeper/settings/location',
+  CHANGE_PASSWORD: '/api/auth/change-password',
 };
 
 // ========================================

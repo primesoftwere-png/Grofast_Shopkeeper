@@ -3,7 +3,9 @@ import { CATEGORY_ENDPOINTS } from '@/lib/apiEndpoints';
 
 // Add new category
 export const addCategory = async (data) => {
-  const response = await axiosInstance.post(CATEGORY_ENDPOINTS.ADD, data);
+  const isFormData = data instanceof FormData;
+  const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+  const response = await axiosInstance.post(CATEGORY_ENDPOINTS.ADD, data, config);
   return response;
 };
 
@@ -21,7 +23,9 @@ export const getCategoryById = async (categoryId) => {
 
 // Update category
 export const updateCategory = async (categoryId, data) => {
-  const response = await axiosInstance.put(CATEGORY_ENDPOINTS.UPDATE(categoryId), data);
+  const isFormData = data instanceof FormData;
+  const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+  const response = await axiosInstance.put(CATEGORY_ENDPOINTS.UPDATE(categoryId), data, config);
   return response;
 };
 

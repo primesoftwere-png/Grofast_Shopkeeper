@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ShoppingCart, Clock, CheckCircle, RotateCcw } from "lucide-react";
-import { getOrders, acceptOrder, markOrderReady, cancelOrder } from "@/services/orderService";
+import { acceptOrder, markOrderReady, cancelOrder } from "@/services/orderService";
+import axiosInstance from "@/lib/axios";
+import { initializeSocket, onNewOrder, offNewOrder, onOrderStatus, offOrderStatus, onDeliveryAssigned, offDeliveryAssigned, joinShopkeeperRooms } from "@/services/socketService";
 
 const tabs = [
+  { label: "All", status: "ALL", icon: Clock },
   { label: "Pending", status: "PENDING", icon: Clock },
   { label: "Active", status: "ACCEPTED", icon: CheckCircle },
   { label: "Completed", status: "DELIVERED", icon: CheckCircle },
@@ -24,34 +27,229 @@ const statusStyles = {
   RETURNED: "bg-destructive/10 text-destructive",
 };
 
+const getStoredShopkeeperUserId = () => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    const rawId =
+      user?.userId ||
+      user?.user?._id ||
+      user?.shopkeeper?.userId ||
+      user?._id ||
+      user?.id;
+
+    if (!rawId) return null;
+    if (typeof rawId === "object") return rawId._id || rawId.id || null;
+    return rawId;
+  } catch (error) {
+    console.error("Error parsing user data:", error);
+    return null;
+  }
+};
+
 const Orders = () => {
   const [activeTab, setActiveTab] = useState("PENDING");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const activeTabRef = useRef(activeTab);
 
-  // Fetch orders on component mount and when tab changes
   useEffect(() => {
-    fetchOrders();
+    activeTabRef.current = activeTab;
   }, [activeTab]);
 
-  const fetchOrders = async () => {
+  // Fetch orders from API (used by both tab changes and socket refetch)
+  const fetchOrdersSilent = useCallback(async () => {
+    try {
+      const shopkeeperId = getStoredShopkeeperUserId();
+      if (!shopkeeperId) return;
+
+      const currentTab = activeTabRef.current;
+      const params = { 
+        shopId: shopkeeperId,
+        _t: Date.now() // Cache buster
+      };
+      if (currentTab !== 'ALL') {
+        params.status = currentTab;
+      }
+
+      const response = await axiosInstance.get('/api/shopkeeper/orders', { params });
+      let ordersData = [];
+      if (response?.data?.recent || response?.data?.history) {
+        ordersData = [...(response.data.recent || []), ...(response.data.history || [])];
+      } else if (response?.data?.orders && Array.isArray(response.data.orders)) {
+        ordersData = response.data.orders;
+      } else if (response?.orders && Array.isArray(response.orders)) {
+        ordersData = response.orders;
+      } else if (Array.isArray(response?.data)) {
+        ordersData = response.data;
+      } else if (Array.isArray(response)) {
+        ordersData = response;
+      }
+      setOrders(prevOrders => {
+        // Create a map of the newly fetched orders
+        const fetchedMap = new Map(ordersData.map(o => [(o._id || o.id)?.toString(), o]));
+        
+        // Keep any optimistic orders (like from sockets) that might not be in the DB yet,
+        // if they were created very recently (e.g. less than 1 minute ago)
+        const optimisticOrders = prevOrders.filter(o => {
+          const id = (o._id || o.id)?.toString();
+          if (fetchedMap.has(id)) return false; // It's in the fetched data, we'll use that
+          
+          // Check if it's a recent optimistic order (within last 60 seconds)
+          const createdAt = new Date(o.createdAt).getTime();
+          const now = Date.now();
+          return (now - createdAt) < 60000; 
+        });
+
+        return [...optimisticOrders, ...ordersData];
+      });
+      return ordersData;
+    } catch (err) {
+      console.error('Background refetch failed:', err.message || err);
+      return null;
+    }
+  }, []);
+
+  // Initialize socket and listen for new orders
+  useEffect(() => {
+    console.log('🔌 Initializing socket connection for real-time orders...');
+    const socket = initializeSocket();
+    
+    if (socket) {
+      const joinedRooms = joinShopkeeperRooms();
+      console.log('Shopkeeper socket rooms:', joinedRooms);
+
+      // Listen for new orders
+      onNewOrder((newOrder) => {
+        console.log('🔔 NEW ORDER RECEIVED:', newOrder);
+        console.log('Order details:', {
+          orderId: newOrder.orderId,
+          orderNumber: newOrder.orderNumber,
+          customerName: newOrder.customerName,
+          totalAmount: newOrder.totalAmount,
+          items: newOrder.items?.length || 0
+        });
+        
+        // Show browser notification
+        try {
+          if (typeof window !== 'undefined' && typeof window.Notification !== 'undefined' && window.Notification.permission === 'granted') {
+            new window.Notification('🔔 New Order Received!', {
+              body: `Order #${newOrder.orderNumber || newOrder.orderId}\nFrom: ${newOrder.customerName || 'Customer'}\nAmount: ₹${newOrder.totalAmount}`,
+              icon: '/favicon.ico',
+              tag: 'new-order-' + (newOrder.orderId || Date.now()),
+              requireInteraction: true,
+            });
+          }
+        } catch (notifErr) {
+          console.log('Notification API failed:', notifErr);
+        }
+        
+        // Play notification sound
+        try {
+          const audio = new Audio('/notification.mp3');
+          audio.play().catch(e => console.log('Audio play failed:', e));
+        } catch (e) {
+          console.log('Audio not available');
+        }
+        
+        // Transform the socket data to match the order structure for instant UI feedback
+        const transformedOrder = {
+          _id: newOrder.orderId,
+          orderNumber: newOrder.orderNumber,
+          orderToken: newOrder.orderToken,
+          customerId: {
+            fullname: newOrder.customerName,
+            phone: newOrder.customerPhone
+          },
+          deliveryAddressId: newOrder.deliveryAddress,
+          items: newOrder.items || [],
+          totalAmount: newOrder.totalAmount,
+          paymentMethod: newOrder.paymentMethod,
+          orderStatus: newOrder.status || 'PENDING',
+          status: newOrder.status || 'PENDING',
+          createdAt: newOrder.createdAt || new Date().toISOString(),
+          subtotal: newOrder.items?.reduce((sum, item) => sum + (item.totalPrice || 0), 0) || 0,
+          deliveryCharge: 0,
+          taxAmount: 0,
+          discountAmount: 0
+        };
+        
+        const currentTab = activeTabRef.current;
+
+        // Step 1: Immediately add the order to the list for instant UI feedback
+        if (currentTab === 'PENDING' || currentTab === 'ALL') {
+          console.log('✅ Adding new order to list immediately');
+          setOrders(prevOrders => {
+            const orderId = transformedOrder._id?.toString();
+            const withoutDuplicate = prevOrders.filter(order => (order._id || order.id)?.toString() !== orderId);
+            return [transformedOrder, ...withoutDuplicate];
+          });
+        }
+
+        // Step 2: Fetch silently to ensure all DB fields (like full address objects, product images) are present
+        console.log('✅ Instant UI fetch complete via socket, syncing with database...');
+        setTimeout(() => {
+          fetchOrdersSilent().then((data) => {
+            if (data) {
+              console.log('✅ Orders refreshed from API:', data.length);
+            }
+          });
+        }, 1000); // 1-second delay to ensure DB write is fully committed
+      });
+
+      // Listen for order status updates
+      onOrderStatus((data) => {
+        console.log('📦 ORDER STATUS UPDATE:', data);
+        
+        // Update the order in the list if it exists
+        setOrders(prevOrders => 
+          prevOrders.map(order => 
+            (order._id === data.orderId || order.orderToken === data.orderToken)
+              ? { ...order, orderStatus: data.status || data.orderStatus, status: data.status || data.orderStatus }
+              : order
+          )
+        );
+      });
+
+      // Request notification permission
+      if (typeof window !== 'undefined' && typeof window.Notification !== 'undefined' && window.Notification.permission === 'default') {
+        window.Notification.requestPermission().then(permission => {
+          console.log('Notification permission:', permission);
+        });
+      }
+
+      // Listen for delivery boy assignment
+      onDeliveryAssigned((data) => {
+        console.log('🛵 DELIVERY ASSIGNED:', data);
+        setOrders(prevOrders => 
+          prevOrders.map(order => 
+            (order._id === data.orderId || order.orderToken === data.orderToken)
+              ? { ...order, deliveryBoy: data.deliveryBoy, status: 'ASSIGNED', orderStatus: 'ASSIGNED' }
+              : order
+          )
+        );
+      });
+    } else {
+      console.error('❌ Socket initialization failed - check authentication token');
+    }
+
+    // Cleanup on unmount
+    return () => {
+      console.log('🔌 Cleaning up socket listeners...');
+      offNewOrder();
+      offOrderStatus();
+      offDeliveryAssigned();
+    };
+  }, [fetchOrdersSilent]);
+
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
       
-      // Get shopkeeper ID from localStorage
-      const userStr = localStorage.getItem('user');
-      let shopkeeperId = null;
-      
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          shopkeeperId = user._id || user.id || user.userId;
-        } catch (e) {
-          console.error('Error parsing user data:', e);
-        }
-      }
+      const shopkeeperId = getStoredShopkeeperUserId();
       
       if (!shopkeeperId) {
         setError('User not found. Please login again.');
@@ -62,17 +260,28 @@ const Orders = () => {
 
       // Build query params with shopkeeper ID and status
       const params = {
-        status: activeTab,
         shopId: shopkeeperId,
+        _t: Date.now() // Cache buster
       };
+      
+      if (activeTab !== 'ALL') {
+        params.status = activeTab;
+      }
 
-      const response = await getOrders(params);
+      const response = await axiosInstance.get('/api/shopkeeper/orders', {
+        params
+      });
       console.log('Orders Response:', response);
       
       // Handle different response structures
       let ordersData = [];
       
-      if (response?.data?.orders && Array.isArray(response.data.orders)) {
+      if (response?.data?.recent || response?.data?.history) {
+        ordersData = [
+          ...(response.data.recent || []),
+          ...(response.data.history || [])
+        ];
+      } else if (response?.data?.orders && Array.isArray(response.data.orders)) {
         ordersData = response.data.orders;
       } else if (response?.orders && Array.isArray(response.orders)) {
         ordersData = response.orders;
@@ -92,7 +301,13 @@ const Orders = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
+
+  // Fetch orders on component mount and when tab changes
+  useEffect(() => {
+    const timeoutId = setTimeout(fetchOrders, 0);
+    return () => clearTimeout(timeoutId);
+  }, [fetchOrders]);
 
   const handleAccept = async (order) => {
     try {
@@ -273,23 +488,23 @@ const Orders = () => {
                 </div>
 
                 {/* Pickup OTP - Prominent Display */}
-                {o.pickupOTP && o.pickupOTP.code && (
+                {(o.pickupOTP?.code || o.otp) && (
                   <div className="bg-primary/5 border-2 border-primary/20 rounded-xl p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="text-xs font-medium text-muted-foreground mb-1">PICKUP OTP</div>
-                        <div className="text-3xl font-bold text-primary tracking-wider">{o.pickupOTP.code}</div>
+                        <div className="text-3xl font-bold text-primary tracking-wider">{o.pickupOTP?.code || o.otp}</div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          {o.pickupOTP.message || 'Share this OTP with the delivery person'}
+                          {o.pickupOTP?.message || 'Share this OTP with the delivery person'}
                         </div>
-                        {o.pickupOTP.expiresAt && (
+                        {o.pickupOTP?.expiresAt && (
                           <div className="text-xs text-muted-foreground mt-1">
                             Expires: {new Date(o.pickupOTP.expiresAt).toLocaleString()}
                           </div>
                         )}
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        {o.pickupOTP.verified ? (
+                        {(o.pickupOTP?.verified || o.otpVerified) ? (
                           <span className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-medium">
                             ✓ Verified
                           </span>

@@ -12,14 +12,26 @@ import {
 
 import { useRouter } from "next/navigation";
 import { logout } from "@/services/authService";
+import { getAllSettings } from "@/services/settingsService";
 
-export function TopNavbar() {
+export function TopNavbar({ onMenuClick }) {
   const router = useRouter();
 
-  // Mock user (replace with API / context)
-  const [user] = useState({
-    name: "Shrey",
-  });
+  const [user, setUser] = useState({ name: "User" });
+  
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await getAllSettings();
+        if (response?.data?.user?.fullname) {
+          setUser({ name: response.data.user.fullname });
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile in navbar:", err);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const ref = useRef(null);
@@ -45,6 +57,14 @@ export function TopNavbar() {
 
   return (
     <header className="h-14 bg-card border-b border-border flex items-center px-4 gap-3 sticky top-0 z-30">
+      {/* Mobile Menu Toggle */}
+      <button 
+        onClick={onMenuClick}
+        className="lg:hidden p-2 -ml-2 rounded-xl hover:bg-muted text-muted-foreground transition-colors"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+      </button>
+
       {/* Search */}
       <div className="hidden sm:flex items-center flex-1 max-w-md">
         <div className="relative w-full">

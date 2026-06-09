@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { ArrowLeft } from "lucide-react";
-import { getCategoryById, updateCategory } from "@/services/categoryService";
+import { ArrowLeft, X } from "lucide-react";
+import { getCategoryById, updateCategory, getAllCategories } from "@/services/categoryService";
 
 const EditCategory = () => {
   const router = useRouter();
@@ -14,15 +14,50 @@ const EditCategory = () => {
   
   const [loading, setLoading] = useState(false);
   const [fetchingCategory, setFetchingCategory] = useState(true);
+  const [parentCategories, setParentCategories] = useState([]);
   const [formData, setFormData] = useState({
     categoryName: "",
     description: "",
+    categoryType: "parent",
+    parentCategoryId: "",
     status: "active",
+    categoryImage: null,
+    existingImage: null,
+    removeImage: false,
   });
+  const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
+    fetchParentCategories();
     fetchCategory();
   }, [categoryId]);
+
+  const fetchParentCategories = async () => {
+    try {
+      const response = await getAllCategories({ parentOnly: true, limit: 100 });
+      let categoriesData = [];
+      if (response?.data?.categories && Array.isArray(response.data.categories)) {
+        categoriesData = response.data.categories;
+      } else if (response?.categories && Array.isArray(response.categories)) {
+        categoriesData = response.categories;
+      } else if (Array.isArray(response?.data)) {
+        categoriesData = response.data;
+      } else if (Array.isArray(response)) {
+        categoriesData = response;
+      }
+      
+      // Strictly ensure only active parent categories are shown, excluding itself
+      const validParents = categoriesData.filter(c => 
+        c.categoryType === 'parent' && 
+        c.status === 'active' && 
+        (c._id || c.id) !== categoryId
+      );
+      
+      setParentCategories(validParents);
+    } catch (err) {
+      console.error('Error fetching parent categories:', err);
+    }
+  };
 
   const fetchCategory = async () => {
     try {
@@ -42,10 +77,21 @@ const EditCategory = () => {
       }
       
       if (category) {
+        let pId = "";
+        if (category.parentCategoryId) {
+          pId = typeof category.parentCategoryId === 'object' 
+                ? category.parentCategoryId._id 
+                : category.parentCategoryId;
+        }
+
         setFormData({
           categoryName: category.categoryName || "",
           description: category.description || "",
+          categoryType: category.categoryType || (pId ? "child" : "parent"),
+          parentCategoryId: pId,
           status: category.status || "active",
+          categoryImage: null,
+          existingImage: category.categoryImage || null,
         });
       } else {
         throw new Error('Category data not found in response');
@@ -67,6 +113,24 @@ const EditCategory = () => {
     }));
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({
+        ...prev,
+        categoryImage: file
+      }));
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({ ...prev, categoryImage: null, existingImage: null, removeImage: true }));
+    setImagePreview(null);
+    const fileInput = document.getElementById('categoryImageInput');
+    if (fileInput) fileInput.value = '';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -75,16 +139,38 @@ const EditCategory = () => {
       return;
     }
 
+    if (formData.categoryType === 'child' && !formData.parentCategoryId) {
+      alert('Please select a parent category');
+      return;
+    }
+
+    if (!formData.categoryImage && !formData.existingImage) {
+      alert('Category image is required');
+      return;
+    }
+
     try {
       setLoading(true);
       
-      const data = {
-        categoryName: formData.categoryName,
-        description: formData.description,
-        status: formData.status,
-      };
+      const submitData = new FormData();
+      submitData.append('categoryName', formData.categoryName);
+      if (formData.description) submitData.append('description', formData.description);
+      submitData.append('categoryType', formData.categoryType);
+      submitData.append('status', formData.status);
 
-      const response = await updateCategory(categoryId, data);
+      if (formData.categoryType === 'child') {
+        submitData.append('parentCategoryId', formData.parentCategoryId);
+      } else {
+        submitData.append('parentCategoryId', ''); // Clear if parent
+      }
+      
+      if (formData.categoryImage) {
+        submitData.append('categoryImage', formData.categoryImage);
+      } else if (formData.removeImage) {
+        submitData.append('removeImage', 'true');
+      }
+
+      const response = await updateCategory(categoryId, submitData);
       console.log('Update category response:', response);
       
       alert('Category updated successfully!');
@@ -145,6 +231,7 @@ const EditCategory = () => {
               />
             </div>
 
+            {/* Category Description */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Description
@@ -159,6 +246,97 @@ const EditCategory = () => {
               />
             </div>
 
+            {/* Category Type */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Category Type
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-not-allowed opacity-70">
+                  <input
+                    type="radio"
+                    name="categoryType"
+                    value="parent"
+                    checked={formData.categoryType === 'parent'}
+                    disabled
+                    className="w-4 h-4 text-primary focus:ring-primary cursor-not-allowed"
+                  />
+                  <span className="text-sm">Parent Category</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-not-allowed opacity-70">
+                  <input
+                    type="radio"
+                    name="categoryType"
+                    value="child"
+                    checked={formData.categoryType === 'child'}
+                    disabled
+                    className="w-4 h-4 text-primary focus:ring-primary cursor-not-allowed"
+                  />
+                  <span className="text-sm">Child Category</span>
+                </label>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Category type cannot be changed after creation.
+              </p>
+            </div>
+
+            {/* Parent Category Dropdown (Conditional) */}
+            {formData.categoryType === 'child' && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Parent Category <span className="text-destructive">*</span>
+                </label>
+                <select
+                  name="parentCategoryId"
+                  value={formData.parentCategoryId}
+                  onChange={handleChange}
+                  className="w-full h-10 px-3 rounded-xl bg-muted border-none text-sm outline-none focus:ring-2 focus:ring-primary"
+                  required={formData.categoryType === 'child'}
+                >
+                  <option value="">Select Parent Category</option>
+                  {parentCategories.map(cat => (
+                    <option key={cat._id || cat.id} value={cat._id || cat.id}>
+                      {cat.categoryName || cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Category Image Upload */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Category Image <span className="text-destructive">*</span>
+              </label>
+              {(imagePreview || formData.existingImage) && (
+                <div className="mb-4 relative inline-block">
+                  <img
+                    src={imagePreview || (formData.existingImage.startsWith('http') ? formData.existingImage : `${process.env.NEXT_PUBLIC_IMAGE_URL || 'http://172.20.10.5:8000'}/uploads/${formData.existingImage}`)}
+                    alt="Category Preview"
+                    className="w-24 h-24 object-cover rounded-xl border border-border bg-white"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-sm hover:bg-destructive/90"
+                    title="Remove Image"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+              <input
+                id="categoryImageInput"
+                type="file"
+                name="categoryImage"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="w-full h-10 px-3 py-2 rounded-xl bg-muted border-none text-sm outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+              />
+            </div>
+
+            {/* Status */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Status

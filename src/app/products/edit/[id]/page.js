@@ -90,7 +90,7 @@ const EditProduct = () => {
         
         // Set image preview if exists
         if (product.productImage) {
-          setImagePreview(`http://172.20.10.5:8000/uploads/${product.productImage}`);
+          setImagePreview(`${process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000'}/uploads/${product.productImage}`);
         }
       } else {
         throw new Error('Product data not found in response');

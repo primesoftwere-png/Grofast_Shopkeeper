@@ -25,6 +25,12 @@ export const updateProfile = async (data) => {
   return response;
 };
 
+// Update location
+export const updateLocation = async (data) => {
+  const response = await axiosInstance.put(SETTINGS_ENDPOINTS.LOCATION, data);
+  return response;
+};
+
 // Change password
 export const changePassword = async (data) => {
   const response = await axiosInstance.post(SETTINGS_ENDPOINTS.CHANGE_PASSWORD, data);

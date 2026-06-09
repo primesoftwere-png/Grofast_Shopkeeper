@@ -1,13 +1,31 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getOrders } from '@/services/orderService';
 import { getAllProducts } from '@/services/productService';
 import { getToken } from '@/lib/axios';
+import { initializeSocket, getSocket } from '@/services/socketService';
 
 const ApiConnectionTest = () => {
   const [results, setResults] = useState({});
   const [loading, setLoading] = useState(false);
+  const [socketStatus, setSocketStatus] = useState('Not Connected');
+
+  useEffect(() => {
+    // Initialize socket and check status
+    const socket = initializeSocket();
+    if (socket) {
+      setSocketStatus(socket.connected ? 'Connected ✅' : 'Connecting...');
+      
+      socket.on('connect', () => {
+        setSocketStatus('Connected ✅');
+      });
+      
+      socket.on('disconnect', () => {
+        setSocketStatus('Disconnected ❌');
+      });
+    }
+  }, []);
 
   const testEndpoint = async (name, apiCall) => {
     setLoading(true);
@@ -48,6 +66,9 @@ const ApiConnectionTest = () => {
             Token: {token.substring(0, 20)}...
           </div>
         )}
+        <div className="text-sm">
+          <strong>Socket Status:</strong> {socketStatus}
+        </div>
       </div>
 
       <div className="flex gap-2">

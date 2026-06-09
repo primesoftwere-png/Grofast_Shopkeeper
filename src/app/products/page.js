@@ -420,7 +420,7 @@ const Products = () => {
                     <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-2xl">
                       {p.productImage ? (
                         <img 
-                          src={`http://172.20.10.5:8000/uploads/${p.productImage}`} 
+                          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000'}/uploads/${p.productImage}`} 
                           alt={p.productName}
                           className="w-full h-full object-cover rounded-xl"
                           onError={(e) => {

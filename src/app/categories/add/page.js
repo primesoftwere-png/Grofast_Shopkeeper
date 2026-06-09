@@ -1,33 +1,56 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { ArrowLeft } from "lucide-react";
-import { addCategory } from "@/services/categoryService";
+import { ArrowLeft, X } from "lucide-react";
+import { addCategory, getAllCategories } from "@/services/categoryService";
 
 const AddCategory = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [parentCategories, setParentCategories] = useState([]);
   const [formData, setFormData] = useState({
     categoryName: "",
     description: "",
-    parentCategoryId: null,
+    categoryType: "parent",
+    parentCategoryId: "",
     status: "active",
+    categoryImage: null,
   });
+  const [imagePreview, setImagePreview] = useState(null);
 
-  const icons = [
-    "🛒", "🥛", "🍞", "🍎", "🥬", "🥤", "🍿", "🧴",
-    "🍕", "🍔", "🍗", "🍖", "🥩", "🐟", "🍤", "🥚",
-    "🧀", "🥓", "🥐", "🥖", "🥨", "🥯", "🥞", "🧇",
-    "🍌", "🍊", "🍋", "🍇", "🍓", "🫐", "🍒", "🍑",
-    "🥕", "🥔", "🧅", "🥒", "🌶️", "🫑", "🥦", "🥬",
-    "🍚", "🍜", "🍝", "🥗", "🍲", "🥘", "🍱", "🍛",
-    "☕", "🍵", "🧃", "🥤", "🧋", "🍷", "🍺", "🥂",
-    "🍰", "🎂", "🧁", "🍪", "🍩", "🍫", "🍬", "🍭",
-    "📦", "🏪", "🛍️", "🎁", "💊", "🧼", "🧽", "🧻",
-  ];
+
+
+  useEffect(() => {
+    fetchParentCategories();
+  }, []);
+
+  const fetchParentCategories = async () => {
+    try {
+      const response = await getAllCategories({ parentOnly: true, limit: 100 });
+      let categoriesData = [];
+      if (response?.data?.categories && Array.isArray(response.data.categories)) {
+        categoriesData = response.data.categories;
+      } else if (response?.categories && Array.isArray(response.categories)) {
+        categoriesData = response.categories;
+      } else if (Array.isArray(response?.data)) {
+        categoriesData = response.data;
+      } else if (Array.isArray(response)) {
+        categoriesData = response;
+      }
+      
+      // Strictly ensure only active parent categories are shown in the dropdown
+      const validParents = categoriesData.filter(c => 
+        c.categoryType === 'parent' && c.status === 'active'
+      );
+      
+      setParentCategories(validParents);
+    } catch (err) {
+      console.error('Error fetching parent categories:', err);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,12 +60,40 @@ const AddCategory = () => {
     }));
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({
+        ...prev,
+        categoryImage: file
+      }));
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({ ...prev, categoryImage: null }));
+    setImagePreview(null);
+    const fileInput = document.getElementById('categoryImageInput');
+    if (fileInput) fileInput.value = '';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validation
     if (!formData.categoryName.trim()) {
       alert('Please enter category name');
+      return;
+    }
+    
+    if (formData.categoryType === 'child' && !formData.parentCategoryId) {
+      alert('Please select a parent category');
+      return;
+    }
+
+    if (!formData.categoryImage) {
+      alert('Please select a category image');
       return;
     }
 
@@ -68,15 +119,21 @@ const AddCategory = () => {
         return;
       }
 
-      const data = {
-        categoryName: formData.categoryName,
-        description: formData.description,
-        parentCategoryId: formData.parentCategoryId || null,
-        status: formData.status,
-        createdBy: userId,
-      };
+      const submitData = new FormData();
+      submitData.append('categoryName', formData.categoryName);
+      if (formData.description) submitData.append('description', formData.description);
+      submitData.append('categoryType', formData.categoryType);
+      submitData.append('status', formData.status);
+      submitData.append('createdBy', userId);
 
-      const response = await addCategory(data);
+      if (formData.categoryType === 'child') {
+        submitData.append('parentCategoryId', formData.parentCategoryId);
+      }
+      if (formData.categoryImage) {
+        submitData.append('categoryImage', formData.categoryImage);
+      }
+
+      const response = await addCategory(submitData);
       console.log('Add category response:', response);
       
       alert('Category added successfully!');
@@ -139,6 +196,94 @@ const AddCategory = () => {
                 placeholder="Enter category description"
                 rows={3}
                 className="w-full px-3 py-2 rounded-xl bg-muted border-none text-sm outline-none focus:ring-2 focus:ring-primary resize-none"
+              />
+            </div>
+
+            {/* Category Type */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Category Type
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="categoryType"
+                    value="parent"
+                    checked={formData.categoryType === 'parent'}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm">Parent Category</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="categoryType"
+                    value="child"
+                    checked={formData.categoryType === 'child'}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm">Child Category</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Parent Category Dropdown (Conditional) */}
+            {formData.categoryType === 'child' && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Parent Category <span className="text-destructive">*</span>
+                </label>
+                <select
+                  name="parentCategoryId"
+                  value={formData.parentCategoryId}
+                  onChange={handleChange}
+                  className="w-full h-10 px-3 rounded-xl bg-muted border-none text-sm outline-none focus:ring-2 focus:ring-primary"
+                  required={formData.categoryType === 'child'}
+                >
+                  <option value="">Select Parent Category</option>
+                  {parentCategories.map(cat => (
+                    <option key={cat._id || cat.id} value={cat._id || cat.id}>
+                      {cat.categoryName || cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Category Image Upload */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Category Image <span className="text-destructive">*</span>
+              </label>
+              
+              {imagePreview && (
+                <div className="mb-4 relative inline-block">
+                  <img
+                    src={imagePreview}
+                    alt="Category Preview"
+                    className="w-24 h-24 object-cover rounded-xl border border-border bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-sm hover:bg-destructive/90"
+                    title="Remove Image"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              <input
+                id="categoryImageInput"
+                type="file"
+                name="categoryImage"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="w-full h-10 px-3 py-2 rounded-xl bg-muted border-none text-sm outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
               />
             </div>
 

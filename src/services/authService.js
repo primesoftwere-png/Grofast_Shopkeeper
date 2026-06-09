@@ -18,7 +18,13 @@ export const login = async (data) => {
   }
   
   if (response?.data?.shopkeeper || response?.data?.user) {
-    const userData = response.data.shopkeeper || response.data.user;
+    const userData = response.data.user
+      ? {
+          ...response.data.user,
+          shopkeeper: response.data.shopkeeper || null,
+          shop: response.data.shop || null,
+        }
+      : response.data.shopkeeper;
     setUser(userData);
     console.log('✅ User data saved to localStorage');
   }

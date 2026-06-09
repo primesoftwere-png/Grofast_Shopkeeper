@@ -351,14 +351,50 @@ const Categories = () => {
           <>
             {/* Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {categories.map((c) => (
+              {categories.map((c) => {
+                const isChild = c.categoryType === 'child' || !!c.parentCategoryId;
+                
+                return (
                 <div
                   key={c._id || c.id}
-                  className="bg-card rounded-2xl p-5 shadow-card border border-border/50 hover:shadow-elevated transition-shadow text-center"
+                  className="bg-card rounded-2xl p-5 shadow-card border border-border/50 hover:shadow-elevated transition-shadow text-center relative"
                 >
-                  <div className="text-4xl mb-3">{c.icon || c.categoryIcon || '📦'}</div>
+                  {/* Category Type Badge */}
+                  <div className="absolute top-3 left-3 flex gap-2">
+                    <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${isChild ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                      {isChild ? 'Child' : 'Parent'}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-center mb-3 mt-4">
+                    {c.categoryImage ? (
+                      <img 
+                        src={c.categoryImage.startsWith('http') ? c.categoryImage : `${process.env.NEXT_PUBLIC_IMAGE_URL || 'http://172.20.10.5:8000'}/uploads/${c.categoryImage}`}
+                        alt={c.categoryName || c.name || 'Category'}
+                        className="w-16 h-16 object-cover rounded-xl shadow-sm border border-border bg-white"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          if (e.target.nextSibling) {
+                            e.target.nextSibling.style.display = 'flex';
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={`w-16 h-16 rounded-xl bg-muted items-center justify-center text-3xl shadow-sm border border-border ${c.categoryImage ? 'hidden' : 'flex'}`}
+                    >
+                      {c.icon || c.categoryIcon || '📦'}
+                    </div>
+                  </div>
 
                   <h3 className="font-semibold text-foreground">{c.categoryName || c.name}</h3>
+
+                  {/* Parent name if child */}
+                  {isChild && c.parentCategoryId && (
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                      in {typeof c.parentCategoryId === 'object' ? c.parentCategoryId.categoryName : 'Parent Category'}
+                    </p>
+                  )}
 
                   <p className="text-sm text-muted-foreground mt-1">
                     {c.productCount !== undefined ? `${c.productCount} products` : '0 products'}
@@ -390,7 +426,8 @@ const Categories = () => {
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Pagination */}

@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import { register } from "@/services/authService";
 import { getToken } from "@/lib/axios";
+import dynamic from "next/dynamic";
+
+const LocationMap = dynamic(() => import("@/components/LocationMap"), { ssr: false });
 
 const steps = ["Basic Info", "Shop Details", "Location & Timing", "Review"];
 
@@ -383,27 +386,21 @@ const Register = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Longitude (Optional)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    placeholder="72.8397"
-                    value={form.longitude}
-                    onChange={(e) => setField("longitude", e.target.value)}
-                    className="w-full h-11 px-4 rounded-2xl bg-muted border-none text-sm outline-none"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Latitude (Optional)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    placeholder="19.1334"
-                    value={form.latitude}
-                    onChange={(e) => setField("latitude", e.target.value)}
-                    className="w-full h-11 px-4 rounded-2xl bg-muted border-none text-sm outline-none"
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="text-sm font-medium text-foreground">Pin Location on Map</label>
+                  <LocationMap 
+                    defaultLat={form.latitude ? parseFloat(form.latitude) : 20.5937} 
+                    defaultLng={form.longitude ? parseFloat(form.longitude) : 78.9629} 
+                    autoLocate={true}
+                    onPositionChange={(lat, lng, locationDetails) => {
+                      setField("latitude", lat);
+                      setField("longitude", lng);
+                      if (locationDetails) {
+                        setField("address", locationDetails.address || form.address);
+                        setField("city", locationDetails.city || form.city);
+                        setField("pincode", locationDetails.pincode || form.pincode);
+                      }
+                    }} 
                   />
                 </div>
 

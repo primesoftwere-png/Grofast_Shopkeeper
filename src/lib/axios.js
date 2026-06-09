@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// API Base URL - MUST be the backend server, NOT Next.js server
-const API_BASE_URL = 'http://172.20.10.5:8000';
+// API Base URL - Read from environment variable, fallback to localhost
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000';
 
 // Create axios instance
 const axiosInstance = axios.create({
