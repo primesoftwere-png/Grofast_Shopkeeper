@@ -24,6 +24,7 @@ const menuItems = [
   { title: "Categories", url: "/categories", icon: Grid3X3 },
   { title: "Inventory", url: "/inventory", icon: Boxes },
   { title: "Income", url: "/income", icon: DollarSign },
+  { title: "Wallet", url: "/wallet", icon: ShoppingBag },
   { title: "Ads & Banner", url: "/ads", icon: Megaphone },
   { title: "Chat", url: "/chat", icon: MessageCircle },
   { title: "Settings", url: "/settings", icon: Settings },
@@ -37,7 +38,7 @@ const AppSidebar = ({ closeMobile }) => {
 
   return (
     <div
-      className={`h-screen border-r border-sidebar-border bg-card transition-all flex flex-col ${
+      className={`h-full border-r border-sidebar-border bg-card transition-all flex flex-col max-w-[85vw] ${
         collapsed ? "w-16" : "w-64"
       }`}
     >

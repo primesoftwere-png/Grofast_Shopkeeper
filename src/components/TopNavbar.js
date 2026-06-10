@@ -56,7 +56,7 @@ export function TopNavbar({ onMenuClick }) {
   };
 
   return (
-    <header className="h-14 bg-card border-b border-border flex items-center px-4 gap-3 sticky top-0 z-30">
+    <header className="h-14 bg-card border-b border-border flex items-center px-4 gap-3 sticky top-0 z-30 w-full shrink-0">
       {/* Mobile Menu Toggle */}
       <button 
         onClick={onMenuClick}

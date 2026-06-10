@@ -16,45 +16,52 @@ import {
   Line,
 } from "recharts";
 
-import { getWalletDetails } from "@/services/walletService";
-
-const dailyData = [
-  { day: "Mon", revenue: 4200, commission: 420 },
-  { day: "Tue", revenue: 3800, commission: 380 },
-  { day: "Wed", revenue: 5100, commission: 510 },
-  { day: "Thu", revenue: 4600, commission: 460 },
-  { day: "Fri", revenue: 5800, commission: 580 },
-  { day: "Sat", revenue: 6200, commission: 620 },
-  { day: "Sun", revenue: 4900, commission: 490 },
-];
+import { getIncomeOverview, getDailyIncome } from "@/services/incomeService";
 
 const Income = () => {
-  const [walletData, setWalletData] = useState({
-    totalRevenue: 124500,
-    earnings: 112050,
-    commission: 12450,
+  const [overviewData, setOverviewData] = useState({
+    totalRevenue: 0,
+    totalEarnings: 0,
+    totalCommission: 0,
   });
+  const [dailyData, setDailyData] = useState([]);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchWalletData();
+    fetchIncomeData();
   }, []);
 
-  const fetchWalletData = async () => {
+  const fetchIncomeData = async () => {
     try {
       setLoading(true);
-      const response = await getWalletDetails();
-      console.log('Wallet Response:', response);
+      const [overviewRes, dailyRes] = await Promise.all([
+        getIncomeOverview(),
+        getDailyIncome('days=7')
+      ]);
 
-      // Update with real data
-      setWalletData({
-        totalRevenue: response?.totalRevenue || response?.balance || 124500,
-        earnings: response?.earnings || response?.availableBalance || 112050,
-        commission: response?.commission || response?.platformFee || 12450,
-      });
+      if (overviewRes?.data) {
+        setOverviewData({
+          totalRevenue: overviewRes.data.totalRevenue || 0,
+          totalEarnings: overviewRes.data.totalEarnings || 0,
+          totalCommission: overviewRes.data.totalCommission || 0,
+        });
+      }
+
+      if (dailyRes?.data?.data) {
+        // Format daily data for charts
+        const formattedData = dailyRes.data.data.map(item => {
+          const date = new Date(item.date);
+          return {
+            day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+            revenue: item.totalRevenue,
+            commission: item.totalCommission
+          };
+        });
+        setDailyData(formattedData.reverse()); // Show oldest to newest left to right
+      }
     } catch (error) {
-      console.error('Error fetching wallet data:', error);
-      // Keep mock data on error
+      console.error('Error fetching income data:', error);
     } finally {
       setLoading(false);
     }
@@ -76,21 +83,21 @@ const Income = () => {
           {[
             {
               title: "Total Revenue",
-              value: `₹${walletData.totalRevenue.toLocaleString()}`,
+              value: `₹${overviewData.totalRevenue.toLocaleString()}`,
               icon: <IndianRupee className="w-5 h-5 text-primary-dark" />,
-              trend: "+8.2%",
+              trend: "Overall",
             },
             {
               title: "Your Earnings",
-              value: `₹${walletData.earnings.toLocaleString()}`,
+              value: `₹${overviewData.totalEarnings.toLocaleString()}`,
               icon: <TrendingUp className="w-5 h-5 text-primary-dark" />,
-              trend: "90%",
+              trend: "Overall",
             },
             {
               title: "GroFast Commission",
-              value: `₹${walletData.commission.toLocaleString()}`,
+              value: `₹${overviewData.totalCommission.toLocaleString()}`,
               icon: <ShoppingCart className="w-5 h-5 text-warning" />,
-              trend: "10%",
+              trend: "Overall",
             },
           ].map((card, i) => (
             <div

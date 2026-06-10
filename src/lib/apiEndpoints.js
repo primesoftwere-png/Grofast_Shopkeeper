@@ -72,6 +72,26 @@ export const SETTINGS_ENDPOINTS = {
 };
 
 // ========================================
+// INCOME APIs (4 APIs)
+// ========================================
+export const INCOME_ENDPOINTS = {
+  OVERVIEW: '/api/shopkeeper/income/overview',
+  DAILY: '/api/shopkeeper/income/daily',
+  BY_PAYMENT_MODE: '/api/shopkeeper/income/by-payment-mode',
+  TRANSACTIONS: '/api/shopkeeper/income/transactions',
+};
+
+// ========================================
+// SETTLEMENT APIs (4 APIs)
+// ========================================
+export const SETTLEMENT_ENDPOINTS = {
+  REQUEST: '/api/shopkeeper/settlement/request',
+  LIST: '/api/shopkeeper/settlement/list',
+  SUMMARY: '/api/shopkeeper/settlement/summary',
+  CANCEL: (settlementId) => `/api/shopkeeper/settlement/${settlementId}/cancel`,
+};
+
+// ========================================
 // WALLET APIs (2 APIs)
 // ========================================
 export const WALLET_ENDPOINTS = {
@@ -80,5 +100,16 @@ export const WALLET_ENDPOINTS = {
 };
 
 // ========================================
-// TOTAL: 39 SHOPKEEPER APIs
+// ADVERTISEMENT APIs (5 APIs)
+// ========================================
+export const ADVERTISEMENT_ENDPOINTS = {
+  CREATE: '/api/shopkeeper/advertisement/create',
+  LIST: '/api/shopkeeper/advertisement/list',
+  DETAILS: (id) => `/api/shopkeeper/advertisement/${id}`,
+  UPDATE: (id) => `/api/shopkeeper/advertisement/${id}`,
+  DELETE: (id) => `/api/shopkeeper/advertisement/${id}`,
+};
+
+// ========================================
+// TOTAL: 52 SHOPKEEPER APIs
 // ========================================
