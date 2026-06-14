@@ -53,6 +53,7 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [orderCounts, setOrderCounts] = useState(null);
   const activeTabRef = useRef(activeTab);
 
   useEffect(() => {
@@ -75,6 +76,19 @@ const Orders = () => {
       }
 
       const response = await axiosInstance.get('/api/shopkeeper/orders', { params });
+      
+      // Also silently fetch stats to update counts
+      try {
+        const statsResponse = await axiosInstance.get('/api/shopkeeper/orders/stats', { params: { shopId: shopkeeperId, _t: Date.now() } });
+        if (statsResponse?.data?.data?.orderCounts) {
+          setOrderCounts(statsResponse.data.data.orderCounts);
+        } else if (statsResponse?.data?.orderCounts) {
+          setOrderCounts(statsResponse.data.orderCounts);
+        }
+      } catch (statsErr) {
+        console.error('Silent stats fetch failed:', statsErr);
+      }
+
       let ordersData = [];
       if (response?.data?.recent || response?.data?.history) {
         ordersData = [...(response.data.recent || []), ...(response.data.history || [])];
@@ -272,6 +286,20 @@ const Orders = () => {
         params
       });
       console.log('Orders Response:', response);
+
+      // Fetch order counts
+      try {
+        const statsResponse = await axiosInstance.get('/api/shopkeeper/orders/stats', {
+          params: { shopId: shopkeeperId, _t: Date.now() }
+        });
+        if (statsResponse?.data?.data?.orderCounts) {
+          setOrderCounts(statsResponse.data.data.orderCounts);
+        } else if (statsResponse?.data?.orderCounts) {
+          setOrderCounts(statsResponse.data.orderCounts);
+        }
+      } catch (statsErr) {
+        console.error('Error fetching order stats:', statsErr);
+      }
       
       // Handle different response structures
       let ordersData = [];
@@ -407,29 +435,42 @@ const Orders = () => {
 
         {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto">
-          {tabs.map((t) => (
-            <button
-              key={t.status}
-              onClick={() => setActiveTab(t.status)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
-                activeTab === t.status
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card text-muted-foreground hover:bg-muted border border-border/50"
-              }`}
-            >
-              <t.icon className="w-4 h-4" />
-              {t.label}
-              <span
-                className={`text-xs px-1.5 py-0.5 rounded-md ${
+          {tabs.map((t) => {
+            let count = 0;
+            if (orderCounts) {
+              if (t.status === "ALL") count = orderCounts.total || 0;
+              else if (t.status === "PENDING") count = orderCounts.pending || 0;
+              else if (t.status === "ACCEPTED") count = (orderCounts.confirmed || 0) + (orderCounts.assigned || 0) + (orderCounts.pickedUp || 0) + (orderCounts.inTransit || 0);
+              else if (t.status === "DELIVERED") count = orderCounts.delivered || 0;
+              else if (t.status === "CANCELLED") count = orderCounts.cancelled || 0;
+            } else {
+              count = activeTab === t.status ? orders.length : 0;
+            }
+
+            return (
+              <button
+                key={t.status}
+                onClick={() => setActiveTab(t.status)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === t.status
-                    ? "bg-primary-foreground/20"
-                    : "bg-muted"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground hover:bg-muted border border-border/50"
                 }`}
               >
-                {orders.length}
-              </span>
-            </button>
-          ))}
+                <t.icon className="w-4 h-4" />
+                {t.label}
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded-md ${
+                    activeTab === t.status
+                      ? "bg-primary-foreground/20"
+                      : "bg-muted"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Loading State */}
