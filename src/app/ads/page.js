@@ -95,18 +95,61 @@ const AdsPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "type" && formData.type !== value) {
+      setFormData((prev) => ({ ...prev, [name]: value, image: null }));
+      setImagePreview("");
+      const fileInput = document.getElementById('image-upload');
+      if (fileInput) fileInput.value = '';
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const processImage = (file, expectedWidth, expectedHeight, callback) => {
+    const img = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const canvas = document.createElement('canvas');
+      canvas.width = expectedWidth;
+      canvas.height = expectedHeight;
+      const ctx = canvas.getContext('2d');
+      
+      const imgRatio = img.width / img.height;
+      const targetRatio = expectedWidth / expectedHeight;
+      let drawWidth = img.width;
+      let drawHeight = img.height;
+      let offsetX = 0;
+      let offsetY = 0;
+
+      if (imgRatio > targetRatio) {
+        drawWidth = img.height * targetRatio;
+        offsetX = (img.width - drawWidth) / 2;
+      } else {
+        drawHeight = img.width / targetRatio;
+        offsetY = (img.height - drawHeight) / 2;
+      }
+
+      ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight, 0, 0, expectedWidth, expectedHeight);
+      
+      canvas.toBlob((blob) => {
+        const newFile = new File([blob], file.name, { type: file.type || 'image/jpeg' });
+        callback(newFile, canvas.toDataURL(file.type || 'image/jpeg'));
+      }, file.type || 'image/jpeg', 0.9);
+    };
+    img.src = objectUrl;
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData((prev) => ({ ...prev, image: file }));
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+      const expectedWidth = formData.type === 'banner' ? 1200 : 800;
+      const expectedHeight = formData.type === 'banner' ? 400 : 400;
+
+      processImage(file, expectedWidth, expectedHeight, (processedFile, dataUrl) => {
+        setFormData((prev) => ({ ...prev, image: processedFile }));
+        setImagePreview(dataUrl);
+      });
     }
   };
 
@@ -406,7 +449,7 @@ const AdsPage = () => {
                         Choose Image
                       </label>
                       <p className="text-xs text-muted-foreground mt-2">
-                        Recommended: 1200x400 for Banners, 800x800 for Ads
+                        Image will be automatically resized/cropped to exactly {formData.type === 'banner' ? '1200x400' : '800x400'} pixels.
                       </p>
                     </div>
                   </div>

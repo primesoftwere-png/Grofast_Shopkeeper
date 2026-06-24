@@ -334,3 +334,38 @@ export const offOrderDelivered = () => {
     socket.off('order_delivered');
   }
 };
+
+// ==================== CHAT EVENTS ====================
+
+export const joinChatRoom = (conversationId) => {
+  if (socket && conversationId) {
+    socket.emit('join-chat', conversationId);
+    console.log(`Joined chat room: ${conversationId}`);
+  }
+};
+
+export const leaveChatRoom = (conversationId) => {
+  if (socket && conversationId) {
+    socket.emit('leave-chat', conversationId);
+    console.log(`Left chat room: ${conversationId}`);
+  }
+};
+
+export const sendChatMessage = (messageData) => {
+  if (socket) {
+    socket.emit('send-message', messageData);
+  }
+};
+
+export const onReceiveMessage = (callback) => {
+  if (socket) {
+    socket.on('receive-message', callback);
+  }
+};
+
+export const offReceiveMessage = () => {
+  if (socket) {
+    socket.off('receive-message');
+  }
+};
+
