@@ -12,3 +12,9 @@ export const requestPayout = async (amount) => {
   const response = await axiosInstance.post(WALLET_ENDPOINTS.PAYOUT, { amount });
   return response;
 };
+
+// Add balance (Deposit)
+export const addBalance = async (amount) => {
+  const response = await axiosInstance.post(WALLET_ENDPOINTS.ADD_BALANCE, { amount });
+  return response;
+};

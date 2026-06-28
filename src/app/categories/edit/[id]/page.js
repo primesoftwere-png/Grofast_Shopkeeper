@@ -1,10 +1,11 @@
 "use client";
+import { toast } from "react-hot-toast";
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, X , Loader2} from "lucide-react";
 import { getCategoryById, updateCategory, getAllCategories } from "@/services/categoryService";
 
 const EditCategory = () => {
@@ -98,7 +99,7 @@ const EditCategory = () => {
       }
     } catch (err) {
       console.error('Error fetching category:', err);
-      alert('Failed to load category details');
+      toast.error('Failed to load category details');
       router.push('/categories');
     } finally {
       setFetchingCategory(false);
@@ -135,17 +136,17 @@ const EditCategory = () => {
     e.preventDefault();
     
     if (!formData.categoryName.trim()) {
-      alert('Please enter category name');
+      toast.error('Please enter category name');
       return;
     }
 
     if (formData.categoryType === 'child' && !formData.parentCategoryId) {
-      alert('Please select a parent category');
+      toast.error('Please select a parent category');
       return;
     }
 
     if (!formData.categoryImage && !formData.existingImage) {
-      alert('Category image is required');
+      toast.error('Category image is required');
       return;
     }
 
@@ -173,11 +174,11 @@ const EditCategory = () => {
       const response = await updateCategory(categoryId, submitData);
       console.log('Update category response:', response);
       
-      alert('Category updated successfully!');
+      toast.success('Category updated successfully!');
       router.push('/categories');
     } catch (err) {
       console.error('Error updating category:', err);
-      alert(err.message || err.error || 'Failed to update category');
+      toast.error(err.message || err.error || 'Failed to update category');
     } finally {
       setLoading(false);
     }
@@ -366,7 +367,7 @@ const EditCategory = () => {
                 disabled={loading}
                 className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium disabled:opacity-50"
               >
-                {loading ? 'Updating...' : 'Update Category'}
+                {loading ? (<span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Updating...</span>) : 'Update Category'}
               </button>
             </div>
           </form>

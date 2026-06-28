@@ -1,9 +1,10 @@
 "use client";
+import { toast } from "react-hot-toast";
 
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Wallet, ArrowUpRight, History, CreditCard, Banknote, RefreshCcw } from "lucide-react";
-import { getWalletDetails } from "@/services/walletService";
+import { Wallet, ArrowUpRight, History, CreditCard, Banknote, RefreshCcw , Loader2} from "lucide-react";
+import { getWalletDetails, addBalance as addBalanceService } from "@/services/walletService";
 import { getSettlementSummary, getSettlements, requestSettlement } from "@/services/settlementService";
 
 const WalletPage = () => {
@@ -14,6 +15,8 @@ const WalletPage = () => {
   const [requesting, setRequesting] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState("");
   const [payoutMethod, setPayoutMethod] = useState("BANK_TRANSFER");
+  const [addAmount, setAddAmount] = useState("");
+  const [addingBalance, setAddingBalance] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -28,9 +31,12 @@ const WalletPage = () => {
         getSettlements(1, 10)
       ]);
 
-      if (walletRes?.data) setWallet(walletRes.data);
+      if (walletRes?.data?.wallet) setWallet(walletRes.data.wallet);
+      else if (walletRes?.data) setWallet(walletRes.data);
+      
       if (summaryRes?.data) setSettlementSummary(summaryRes.data);
-      if (listRes?.data?.data) setSettlements(listRes.data.data);
+      
+      if (listRes?.data?.settlements) setSettlements(listRes.data.settlements);
     } catch (error) {
       console.error("Error fetching wallet data:", error);
     } finally {
@@ -41,7 +47,7 @@ const WalletPage = () => {
   const handleRequestPayout = async (e) => {
     e.preventDefault();
     if (!payoutAmount || Number(payoutAmount) < 1100) {
-      alert("Minimum payout amount is ₹1,100");
+      toast.error("Minimum payout amount is ₹1,100");
       return;
     }
 
@@ -49,16 +55,37 @@ const WalletPage = () => {
     try {
       await requestSettlement({
         amount: Number(payoutAmount),
-        paymentMode: payoutMethod
+        type: payoutMethod
       });
-      alert("Payout requested successfully!");
+      toast.success("Payout requested successfully!");
       setPayoutAmount("");
       fetchData(); // Refresh data
     } catch (error) {
       console.error("Payout request failed:", error);
-      alert(error?.response?.data?.message || "Failed to request payout. Ensure your bank details are verified.");
+      toast.error(error?.response?.data?.message || "Failed to request payout. Ensure your bank details are verified.");
     } finally {
       setRequesting(false);
+    }
+  };
+
+  const handleAddBalance = async (e) => {
+    e.preventDefault();
+    if (!addAmount || Number(addAmount) <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+
+    setAddingBalance(true);
+    try {
+      await addBalanceService(Number(addAmount));
+      toast.success("Balance added successfully!");
+      setAddAmount("");
+      fetchData(); // Refresh data
+    } catch (error) {
+      console.error("Add balance failed:", error);
+      toast.error(error?.response?.data?.message || "Failed to add balance.");
+    } finally {
+      setAddingBalance(false);
     }
   };
 
@@ -83,7 +110,7 @@ const WalletPage = () => {
                     <p className="text-sm font-medium text-primary-dark">Available Balance</p>
                     <Wallet className="w-5 h-5 text-primary-dark" />
                   </div>
-                  <h3 className="text-3xl font-bold text-foreground">₹{wallet?.walletBalance?.toLocaleString() || 0}</h3>
+                  <h3 className="text-3xl font-bold text-foreground">₹{wallet?.balance?.toLocaleString() || 0}</h3>
                   <p className="text-xs text-muted-foreground mt-2">Ready for withdrawal</p>
                 </div>
               </div>
@@ -93,7 +120,7 @@ const WalletPage = () => {
                   <p className="text-sm font-medium text-muted-foreground">Online Earnings</p>
                   <CreditCard className="w-5 h-5 text-blue-500" />
                 </div>
-                <h3 className="text-2xl font-bold text-foreground">₹{wallet?.totalOnlineIncome?.toLocaleString() || 0}</h3>
+                <h3 className="text-2xl font-bold text-foreground">₹{wallet?.totalOnlineEarnings?.toLocaleString() || 0}</h3>
               </div>
 
               <div className="bg-card rounded-2xl p-6 shadow-card border border-border/50">
@@ -101,7 +128,7 @@ const WalletPage = () => {
                   <p className="text-sm font-medium text-muted-foreground">Cash in Hand (COD)</p>
                   <Banknote className="w-5 h-5 text-green-500" />
                 </div>
-                <h3 className="text-2xl font-bold text-foreground">₹{wallet?.totalCashIncome?.toLocaleString() || 0}</h3>
+                <h3 className="text-2xl font-bold text-foreground">₹{wallet?.totalCashEarnings?.toLocaleString() || 0}</h3>
               </div>
             </div>
 
@@ -134,19 +161,47 @@ const WalletPage = () => {
                         className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
                       >
                         <option value="BANK_TRANSFER">Bank Transfer</option>
-                        <option value="UPI">UPI</option>
+                        <option value="UPI_TRANSFER">UPI Transfer</option>
                       </select>
                     </div>
                     <button 
                       type="submit" 
-                      disabled={requesting || wallet?.walletBalance < 1100}
+                      disabled={requesting || (wallet?.balance || 0) < 1100}
                       className="w-full py-2.5 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {requesting ? "Requesting..." : "Withdraw Funds"}
+                      {requesting ? (<span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Requesting...</span>) : "Withdraw Funds"}
                     </button>
-                    {wallet?.walletBalance < 1100 && (
+                    {(wallet?.balance || 0) < 1100 && (
                       <p className="text-xs text-warning text-center mt-2">Insufficient balance for minimum payout.</p>
                     )}
+                  </form>
+                </div>
+
+                <div className="bg-card rounded-2xl p-6 shadow-card border border-border/50">
+                  <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Wallet className="w-4 h-4 text-green-500" />
+                    Add Balance
+                  </h3>
+                  <form onSubmit={handleAddBalance} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">Amount (₹)</label>
+                      <input 
+                        type="number" 
+                        value={addAmount}
+                        onChange={(e) => setAddAmount(e.target.value)}
+                        placeholder="Enter amount to deposit"
+                        className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:border-green-500"
+                        required
+                        min="1"
+                      />
+                    </div>
+                    <button 
+                      type="submit" 
+                      disabled={addingBalance}
+                      className="w-full py-2.5 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {addingBalance ? (<span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Processing...</span>) : "Add to Wallet"}
+                    </button>
                   </form>
                 </div>
 
@@ -158,15 +213,15 @@ const WalletPage = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center py-2 border-b border-border">
                       <span className="text-sm text-muted-foreground">Pending</span>
-                      <span className="font-medium">₹{settlementSummary?.pendingAmount?.toLocaleString() || 0}</span>
+                      <span className="font-medium">₹{settlementSummary?.overall?.pending?.amount?.toLocaleString() || 0}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-border">
                       <span className="text-sm text-muted-foreground">Completed</span>
-                      <span className="font-medium text-green-600">₹{settlementSummary?.completedAmount?.toLocaleString() || 0}</span>
+                      <span className="font-medium text-green-600">₹{settlementSummary?.overall?.completed?.amount?.toLocaleString() || 0}</span>
                     </div>
                     <div className="flex justify-between items-center py-2">
                       <span className="text-sm text-muted-foreground">Total Payouts</span>
-                      <span className="font-medium">{settlementSummary?.totalSettlements || 0}</span>
+                      <span className="font-medium">{settlementSummary?.overall?.total?.count || 0}</span>
                     </div>
                   </div>
                 </div>
@@ -204,7 +259,7 @@ const WalletPage = () => {
                               </td>
                               <td className="px-4 py-3">
                                 <span className="px-2 py-1 bg-muted rounded-md text-xs font-medium">
-                                  {settlement.paymentMode}
+                                  {settlement.type}
                                 </span>
                               </td>
                               <td className="px-4 py-3 font-medium">

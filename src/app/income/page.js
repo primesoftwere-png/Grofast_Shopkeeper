@@ -28,34 +28,61 @@ const Income = () => {
 
   const [loading, setLoading] = useState(true);
 
+  // Date filter states
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState(() => {
+    return new Date().toISOString().split('T')[0];
+  });
+
   useEffect(() => {
     fetchIncomeData();
-  }, []);
+  }, [startDate, endDate]);
 
   const fetchIncomeData = async () => {
     try {
       setLoading(true);
+      const queryParams = new URLSearchParams();
+      if (startDate) queryParams.append('startDate', startDate);
+      if (endDate) queryParams.append('endDate', endDate);
+      const queryString = queryParams.toString();
+
       const [overviewRes, dailyRes] = await Promise.all([
-        getIncomeOverview(),
-        getDailyIncome('days=7')
+        getIncomeOverview(queryString),
+        getDailyIncome(queryString)
       ]);
 
-      if (overviewRes?.data) {
+      if (overviewRes?.data?.data) {
+        const overview = overviewRes.data.data;
+        const customPeriod = overview.customPeriod || {};
+        const allTime = overview.allTime || {};
+        
+        // Use customPeriod if available, else fallback
+        const totalEarnings = (startDate && endDate) ? customPeriod.netIncome || customPeriod.totalIncome || 0 
+          : allTime.totalEarnings || overview.totalEarnings || 0;
+        const totalCommission = (startDate && endDate) ? customPeriod.platformCommission || 0 
+          : allTime.totalPlatformCommission || overview.totalCommission || 0;
+        const totalRevenue = (startDate && endDate) ? customPeriod.totalIncome || totalEarnings + totalCommission 
+          : allTime.totalEarnings ? totalEarnings + totalCommission : (overview.totalRevenue || 0);
+
         setOverviewData({
-          totalRevenue: overviewRes.data.totalRevenue || 0,
-          totalEarnings: overviewRes.data.totalEarnings || 0,
-          totalCommission: overviewRes.data.totalCommission || 0,
+          totalRevenue,
+          totalEarnings,
+          totalCommission,
         });
       }
 
       if (dailyRes?.data?.data) {
         // Format daily data for charts
         const formattedData = dailyRes.data.data.map(item => {
-          const date = new Date(item.date);
+          const date = new Date(item.date || item.createdAt || new Date());
           return {
             day: date.toLocaleDateString('en-US', { weekday: 'short' }),
-            revenue: item.totalRevenue,
-            commission: item.totalCommission
+            revenue: item.totalRevenue || item.totalIncome || item.netIncome || item.totalEarnings || 0,
+            commission: item.totalCommission || item.platformCommission || 0
           };
         });
         setDailyData(formattedData.reverse()); // Show oldest to newest left to right
@@ -70,12 +97,28 @@ const Income = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Income</h1>
-          <p className="text-sm text-muted-foreground">
-            Revenue breakdown and earnings
-          </p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Income</h1>
+            <p className="text-sm text-muted-foreground">
+              Revenue breakdown and earnings
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input 
+              type="date" 
+              value={startDate} 
+              onChange={(e) => setStartDate(e.target.value)}
+              className="px-3 py-2 border rounded-xl text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <span className="text-muted-foreground text-sm">to</span>
+            <input 
+              type="date" 
+              value={endDate} 
+              onChange={(e) => setEndDate(e.target.value)}
+              className="px-3 py-2 border rounded-xl text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
         </div>
 
         {/* Stat Cards */}
@@ -85,19 +128,19 @@ const Income = () => {
               title: "Total Revenue",
               value: `₹${overviewData.totalRevenue.toLocaleString()}`,
               icon: <IndianRupee className="w-5 h-5 text-primary-dark" />,
-              trend: "Overall",
+              trend: "Period",
             },
             {
               title: "Your Earnings",
               value: `₹${overviewData.totalEarnings.toLocaleString()}`,
               icon: <TrendingUp className="w-5 h-5 text-primary-dark" />,
-              trend: "Overall",
+              trend: "Period",
             },
             {
               title: "GroFast Commission",
               value: `₹${overviewData.totalCommission.toLocaleString()}`,
               icon: <ShoppingCart className="w-5 h-5 text-warning" />,
-              trend: "Overall",
+              trend: "Period",
             },
           ].map((card, i) => (
             <div

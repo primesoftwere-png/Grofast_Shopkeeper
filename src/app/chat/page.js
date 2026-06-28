@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Send, User, Search, Loader2 } from "lucide-react";
+import { Send, User, Search, Loader2, CheckCircle2 } from "lucide-react";
 import { chatAPI } from "@/services/chat.service";
 import { 
   joinChatRoom, 
@@ -22,6 +22,7 @@ export default function ChatPage() {
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
 
   const messagesEndRef = useRef(null);
 
@@ -101,6 +102,13 @@ export default function ChatPage() {
     }, 100);
   };
 
+  const showToast = (message) => {
+    setToastMessage(message);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputText.trim() || !activeConversation || !currentUser) return;
@@ -117,6 +125,7 @@ export default function ChatPage() {
     setInputText("");
     sendChatMessage(messageData);
     scrollToBottom();
+    showToast("Message sent successfully");
   };
 
   const formatTime = (dateString) => {
@@ -127,8 +136,16 @@ export default function ChatPage() {
 
   return (
     <DashboardLayout>
-      <div className="h-[calc(100vh-100px)] flex bg-background rounded-2xl overflow-hidden border border-border shadow-sm">
+      <div className="h-[calc(100vh-100px)] flex bg-background rounded-2xl overflow-hidden border border-border shadow-sm relative">
         
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div className="absolute top-4 right-4 z-50 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 transition-opacity duration-300">
+            <CheckCircle2 className="w-5 h-5 text-green-400" />
+            <span className="text-sm font-medium">{toastMessage}</span>
+          </div>
+        )}
+
         {/* Sidebar - Conversations List */}
         <div className="w-1/3 border-r border-border bg-card flex flex-col">
           <div className="p-4 border-b border-border">
@@ -272,3 +289,4 @@ export default function ChatPage() {
     </DashboardLayout>
   );
 }
+

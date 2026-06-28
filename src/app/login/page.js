@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ShoppingBag, Eye, EyeOff } from "lucide-react";
+import { ShoppingBag, Eye, EyeOff , Loader2} from "lucide-react";
 import { login } from "@/services/authService";
 import { getToken } from "@/lib/axios";
 import ApiTest from "@/components/ApiTest";
@@ -165,7 +165,7 @@ const Login = () => {
               disabled={loading}
               className="w-full h-12 rounded-2xl text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-elevated disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Logging in..." : "Login"}
+              {loading ? (<span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Logging in...</span>) : "Login"}
             </button>
           </form>
 

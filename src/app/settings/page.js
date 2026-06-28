@@ -11,7 +11,7 @@ import {
   changePassword 
 } from "@/services/settingsService";
 import dynamic from "next/dynamic";
-import { User, MapPin, Clock, CreditCard, Lock, Save } from "lucide-react";
+import { User, MapPin, Clock, CreditCard, Lock, Save , Loader2} from "lucide-react";
 
 // Dynamically import the map so SSR doesn't crash on window object
 const LocationMap = dynamic(() => import("@/components/LocationMap"), { ssr: false });
@@ -240,7 +240,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="pt-4">
                     <button type="submit" disabled={saving} className="h-11 px-6 rounded-2xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors flex items-center gap-2">
-                      {saving ? "Saving..." : <><Save className="w-4 h-4" /> Save Changes</>}
+                      {saving ? (<span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Saving...</span>) : <><Save className="w-4 h-4" /> Save Changes</>}
                     </button>
                   </div>
                 </form>
@@ -265,7 +265,7 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <button onClick={handleUpdateLocation} disabled={saving} className="h-11 px-6 rounded-2xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors flex items-center gap-2">
-                    {saving ? "Saving..." : <><Save className="w-4 h-4" /> Save Location</>}
+                    {saving ? (<span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Saving...</span>) : <><Save className="w-4 h-4" /> Save Location</>}
                   </button>
                 </div>
               </div>
@@ -298,7 +298,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="sm:col-span-2 pt-2">
                     <button type="submit" disabled={saving} className="h-11 px-6 rounded-2xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors flex items-center gap-2">
-                      {saving ? "Saving..." : <><Save className="w-4 h-4" /> Save Hours</>}
+                      {saving ? (<span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Saving...</span>) : <><Save className="w-4 h-4" /> Save Hours</>}
                     </button>
                   </div>
                 </form>
@@ -357,7 +357,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="sm:col-span-2 pt-4">
                     <button type="submit" disabled={saving} className="h-11 px-6 rounded-2xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors flex items-center gap-2">
-                      {saving ? "Saving..." : <><Save className="w-4 h-4" /> Save Bank Details</>}
+                      {saving ? (<span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Saving...</span>) : <><Save className="w-4 h-4" /> Save Bank Details</>}
                     </button>
                   </div>
                 </form>
@@ -391,7 +391,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="pt-4">
                     <button type="submit" disabled={saving} className="h-11 px-6 rounded-2xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors flex items-center gap-2">
-                      {saving ? "Saving..." : <><Save className="w-4 h-4" /> Update Password</>}
+                      {saving ? (<span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Saving...</span>) : <><Save className="w-4 h-4" /> Update Password</>}
                     </button>
                   </div>
                 </form>

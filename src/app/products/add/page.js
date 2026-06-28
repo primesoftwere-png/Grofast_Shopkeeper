@@ -1,10 +1,11 @@
 "use client";
+import { toast } from "react-hot-toast";
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { ArrowLeft, Upload, X } from "lucide-react";
+import { ArrowLeft, Upload, X , Loader2} from "lucide-react";
 import { addProduct } from "@/services/productService";
 import { getAllCategories } from "@/services/categoryService";
 
@@ -77,23 +78,23 @@ const AddProduct = () => {
     
     // Validation
     if (!formData.productName.trim()) {
-      alert('Please enter product name');
+      toast.error('Please enter product name');
       return;
     }
     if (!formData.productDescription.trim()) {
-      alert('Please enter product description');
+      toast.error('Please enter product description');
       return;
     }
     if (!formData.productPrice || formData.productPrice <= 0) {
-      alert('Please enter valid price');
+      toast.error('Please enter valid price');
       return;
     }
     if (!formData.productQuantity || formData.productQuantity < 0) {
-      alert('Please enter valid quantity');
+      toast.error('Please enter valid quantity');
       return;
     }
     if (!formData.productCategory) {
-      alert('Please select a category');
+      toast.error('Please select a category');
       return;
     }
 
@@ -114,7 +115,7 @@ const AddProduct = () => {
       }
       
       if (!userId) {
-        alert('User not found. Please login again.');
+        toast.error('User not found. Please login again.');
         router.push('/login');
         return;
       }
@@ -140,11 +141,11 @@ const AddProduct = () => {
       const response = await addProduct(data);
       console.log('Add product response:', response);
       
-      alert('Product added successfully!');
+      toast.success('Product added successfully!');
       router.push('/products');
     } catch (err) {
       console.error('Error adding product:', err);
-      alert(err.message || err.error || 'Failed to add product');
+      toast.error(err.message || err.error || 'Failed to add product');
     } finally {
       setLoading(false);
     }
@@ -349,7 +350,7 @@ const AddProduct = () => {
                 disabled={loading}
                 className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium disabled:opacity-50"
               >
-                {loading ? 'Adding...' : 'Add Product'}
+                {loading ? (<span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Adding...</span>) : 'Add Product'}
               </button>
             </div>
           </form>

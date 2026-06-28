@@ -1,10 +1,11 @@
 "use client";
+import { toast } from "react-hot-toast";
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, X , Loader2} from "lucide-react";
 import { addCategory, getAllCategories } from "@/services/categoryService";
 
 const AddCategory = () => {
@@ -83,17 +84,17 @@ const AddCategory = () => {
     
     // Validation
     if (!formData.categoryName.trim()) {
-      alert('Please enter category name');
+      toast.error('Please enter category name');
       return;
     }
     
     if (formData.categoryType === 'child' && !formData.parentCategoryId) {
-      alert('Please select a parent category');
+      toast.error('Please select a parent category');
       return;
     }
 
     if (!formData.categoryImage) {
-      alert('Please select a category image');
+      toast.error('Please select a category image');
       return;
     }
 
@@ -114,7 +115,7 @@ const AddCategory = () => {
       }
       
       if (!userId) {
-        alert('User not found. Please login again.');
+        toast.error('User not found. Please login again.');
         router.push('/login');
         return;
       }
@@ -136,11 +137,11 @@ const AddCategory = () => {
       const response = await addCategory(submitData);
       console.log('Add category response:', response);
       
-      alert('Category added successfully!');
+      toast.success('Category added successfully!');
       router.push('/categories');
     } catch (err) {
       console.error('Error adding category:', err);
-      alert(err.message || err.error || 'Failed to add category');
+      toast.error(err.message || err.error || 'Failed to add category');
     } finally {
       setLoading(false);
     }
@@ -318,7 +319,7 @@ const AddCategory = () => {
                 disabled={loading}
                 className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium disabled:opacity-50"
               >
-                {loading ? 'Adding...' : 'Add Category'}
+                {loading ? (<span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Adding...</span>) : 'Add Category'}
               </button>
             </div>
           </form>

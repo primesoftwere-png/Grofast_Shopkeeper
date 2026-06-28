@@ -1,4 +1,5 @@
 "use client";
+import { toast } from "react-hot-toast";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -54,11 +55,19 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [orderCounts, setOrderCounts] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
   const activeTabRef = useRef(activeTab);
 
   useEffect(() => {
     activeTabRef.current = activeTab;
   }, [activeTab]);
+
+  const showToast = (message, type = 'success') => {
+    setToastMessage({ message, type });
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 5000);
+  };
 
   // Fetch orders from API (used by both tab changes and socket refetch)
   const fetchOrdersSilent = useCallback(async () => {
@@ -341,7 +350,7 @@ const Orders = () => {
     try {
       const orderToken = order.orderToken;
       if (!orderToken) {
-        alert('Order token not found');
+        showToast('Order token not found', 'error');
         return;
       }
 
@@ -350,10 +359,11 @@ const Orders = () => {
       
       // Show pickup OTP if available
       if (response?.data?.pickupOTP || response?.pickupOTP) {
-        const otp = response.data?.pickupOTP || response.pickupOTP;
-        alert(`Order accepted successfully!\n\nPickup OTP: ${otp}\n\nShare this OTP with the delivery person.`);
+        const otpObj = response.data?.pickupOTP || response.pickupOTP;
+        const otpCode = typeof otpObj === 'object' ? otpObj.code : otpObj;
+        showToast(`Order accepted successfully! Pickup OTP: ${otpCode}`);
       } else {
-        alert('Order accepted successfully!');
+        showToast('Order accepted successfully!');
       }
       
       // Switch to Active tab after accepting
@@ -361,7 +371,7 @@ const Orders = () => {
       await fetchOrders(); // Refresh list
     } catch (err) {
       console.error('Error accepting order:', err);
-      alert(err.message || err.error || 'Failed to accept order');
+      showToast(err.message || err.error || 'Failed to accept order', 'error');
     }
   };
 
@@ -372,17 +382,17 @@ const Orders = () => {
     try {
       const orderToken = order.orderToken;
       if (!orderToken) {
-        alert('Order token not found');
+        toast.error('Order token not found');
         return;
       }
 
       const response = await cancelOrder(orderToken, reason);
       console.log('Cancel order response:', response);
-      alert('Order cancelled successfully!');
+      toast.success('Order cancelled successfully!');
       await fetchOrders(); // Refresh list
     } catch (err) {
       console.error('Error cancelling order:', err);
-      alert(err.message || err.error || 'Failed to cancel order');
+      toast.error(err.message || err.error || 'Failed to cancel order');
     }
   };
 
@@ -392,7 +402,7 @@ const Orders = () => {
     try {
       const orderToken = order.orderToken;
       if (!orderToken) {
-        alert('Order token not found');
+        toast.error('Order token not found');
         return;
       }
 
@@ -402,22 +412,32 @@ const Orders = () => {
       // Show pickup OTP if available
       if (response?.data?.pickupOTP || response?.pickupOTP) {
         const otp = response.data?.pickupOTP || response.pickupOTP;
-        alert(`Order marked as ready!\n\nPickup OTP: ${otp}\n\nShare this OTP with the delivery person.`);
+        toast.error(`Order marked as ready!\n\nPickup OTP: ${otp}\n\nShare this OTP with the delivery person.`);
       } else {
-        alert('Order marked as ready for pickup!');
+        toast.error('Order marked as ready for pickup!');
       }
       
       await fetchOrders(); // Refresh list
     } catch (err) {
       console.error('Error marking order ready:', err);
-      alert(err.message || err.error || 'Failed to mark order ready');
+      toast.error(err.message || err.error || 'Failed to mark order ready');
     }
   };
 
   return (
     <ProtectedRoute>
       <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 relative">
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 transition-opacity duration-300 ${
+            toastMessage.type === 'error' ? 'bg-red-500 text-white' : 'bg-gray-900 text-white'
+          }`}>
+            {toastMessage.type !== 'error' && <CheckCircle className="w-5 h-5 text-green-400" />}
+            <span className="text-sm font-medium">{toastMessage.message}</span>
+          </div>
+        )}
+
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-foreground">Orders</h1>

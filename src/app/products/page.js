@@ -1,4 +1,5 @@
 "use client";
+import { toast } from "react-hot-toast";
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -121,11 +122,11 @@ const Products = () => {
     try {
       const response = await deleteProduct(productId);
       console.log('Delete product response:', response);
-      alert('Product deleted successfully!');
+      toast.success('Product deleted successfully!');
       await fetchProducts(); // Refresh list
     } catch (err) {
       console.error('Error deleting product:', err);
-      alert(err.message || err.error || 'Failed to delete product');
+      toast.error(err.message || err.error || 'Failed to delete product');
     }
   };
 

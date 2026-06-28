@@ -2,8 +2,8 @@ import axiosInstance from '@/lib/axios';
 import { INCOME_ENDPOINTS } from '@/lib/apiEndpoints';
 
 // Get income overview
-export const getIncomeOverview = async () => {
-  const response = await axiosInstance.get(INCOME_ENDPOINTS.OVERVIEW);
+export const getIncomeOverview = async (query = '') => {
+  const response = await axiosInstance.get(`${INCOME_ENDPOINTS.OVERVIEW}${query ? `?${query}` : ''}`);
   return response;
 };
 

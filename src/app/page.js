@@ -21,39 +21,34 @@ import {
   CartesianGrid,
 } from "recharts";
 
-import { getOrderStats } from "@/services/orderService";
-import { getWalletDetails } from "@/services/walletService";
-import { getLowStockProducts } from "@/services/inventoryService";
-
-const incomeData = [
-  { day: "Mon", income: 2400 },
-  { day: "Tue", income: 1800 },
-  { day: "Wed", income: 3200 },
-  { day: "Thu", income: 2800 },
-  { day: "Fri", income: 3600 },
-  { day: "Sat", income: 4200 },
-  { day: "Sun", income: 3100 },
-];
-
-const recentOrders = [
-  { id: "#GF1023", customer: "Ankit Sharma", items: 5, total: "₹485", status: "Delivered" },
-  { id: "#GF1024", customer: "Priya Patel", items: 3, total: "₹290", status: "In Transit" },
-  { id: "#GF1025", customer: "Rohan Singh", items: 8, total: "₹720", status: "Pending" },
-  { id: "#GF1026", customer: "Neha Gupta", items: 2, total: "₹180", status: "Delivered" },
-];
+import { getDashboardData } from "@/services/dashboardService";
 
 const statusColor = {
+  DELIVERED: "bg-primary/15 text-primary-dark",
   Delivered: "bg-primary/15 text-primary-dark",
+  "IN_TRANSIT": "bg-info/15 text-info",
   "In Transit": "bg-info/15 text-info",
+  PENDING: "bg-secondary text-secondary-foreground",
   Pending: "bg-secondary text-secondary-foreground",
+  CONFIRMED: "bg-primary/15 text-primary-dark",
+  ASSIGNED: "bg-info/15 text-info",
+  PICKED_UP: "bg-info/15 text-info",
+  CANCELLED: "bg-red-100 text-red-600"
 };
 
 export default function Home() {
-  const [stats, setStats] = useState({
-    todayIncome: 0,
-    monthlyIncome: 0,
-    totalOrders: 0,
-    lowStockCount: 0,
+  const [data, setData] = useState({
+    stats: { todaysIncome: "₹0", monthlyIncome: "₹0", totalOrders: 0, lowStockAlerts: 0 },
+    incomeData: [
+      { day: "Sun", income: 0 },
+      { day: "Mon", income: 0 },
+      { day: "Tue", income: 0 },
+      { day: "Wed", income: 0 },
+      { day: "Thu", income: 0 },
+      { day: "Fri", income: 0 },
+      { day: "Sat", income: 0 },
+    ],
+    recentOrders: []
   });
   const [loading, setLoading] = useState(true);
 
@@ -64,29 +59,12 @@ export default function Home() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-
-      // Fetch order stats
-      const orderStatsResponse = await getOrderStats();
-      console.log('Order Stats:', orderStatsResponse);
-
-      // Fetch wallet details
-      const walletResponse = await getWalletDetails();
-      console.log('Wallet Details:', walletResponse);
-
-      // Fetch low stock products
-      const lowStockResponse = await getLowStockProducts(10);
-      console.log('Low Stock:', lowStockResponse);
-
-      // Update stats with real data
-      setStats({
-        todayIncome: walletResponse?.todayEarnings || 4250,
-        monthlyIncome: walletResponse?.monthlyEarnings || 124500,
-        totalOrders: orderStatsResponse?.totalOrders || 348,
-        lowStockCount: lowStockResponse?.count || lowStockResponse?.length || 7,
-      });
+      const response = await getDashboardData();
+      if (response.success && response.data) {
+        setData(response.data);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      // Keep default mock data on error
     } finally {
       setLoading(false);
     }
@@ -109,25 +87,25 @@ export default function Home() {
           {[
             {
               title: "Today's Income",
-              value: `₹${stats.todayIncome.toLocaleString()}`,
+              value: data.stats.todaysIncome,
               icon: <IndianRupee className="w-5 h-5 text-primary-dark" />,
               trend: "+12%",
             },
             {
               title: "Monthly Income",
-              value: `₹${stats.monthlyIncome.toLocaleString()}`,
+              value: data.stats.monthlyIncome,
               icon: <TrendingUp className="w-5 h-5 text-primary-dark" />,
               trend: "+8%",
             },
             {
               title: "Total Orders",
-              value: stats.totalOrders.toString(),
+              value: data.stats.totalOrders.toString(),
               icon: <ShoppingCart className="w-5 h-5 text-primary-dark" />,
               trend: "+23",
             },
             {
               title: "Low Stock Alerts",
-              value: stats.lowStockCount.toString(),
+              value: data.stats.lowStockAlerts.toString(),
               icon: <AlertTriangle className="w-5 h-5 text-warning" />,
             },
           ].map((card, i) => (
@@ -167,24 +145,30 @@ export default function Home() {
               Weekly Income
             </h3>
 
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={incomeData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(120,16%,90%)" />
-                <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="hsl(0,0%,45%)" />
-                <YAxis tick={{ fontSize: 12 }} stroke="hsl(0,0%,45%)" />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: "12px",
-                    border: "1px solid hsl(120,16%,90%)",
-                  }}
-                />
-                <Bar
-                  dataKey="income"
-                  fill="hsl(103,56%,71%)"
-                  radius={[6, 6, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            {loading ? (
+              <div className="h-[260px] flex items-center justify-center animate-pulse bg-muted/50 rounded-xl">
+                <span className="text-muted-foreground">Loading chart...</span>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={data.incomeData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(120,16%,90%)" />
+                  <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="hsl(0,0%,45%)" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="hsl(0,0%,45%)" />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "12px",
+                      border: "1px solid hsl(120,16%,90%)",
+                    }}
+                  />
+                  <Bar
+                    dataKey="income"
+                    fill="hsl(103,56%,71%)"
+                    radius={[6, 6, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
           {/* Messages */}
@@ -248,34 +232,49 @@ export default function Home() {
               </thead>
 
               <tbody>
-                {recentOrders.map((o) => (
-                  <tr
-                    key={o.id}
-                    className="border-b border-border/50 last:border-0"
-                  >
-                    <td className="py-3 font-medium text-foreground">
-                      {o.id}
-                    </td>
-                    <td className="py-3 text-muted-foreground">
-                      {o.customer}
-                    </td>
-                    <td className="py-3 text-muted-foreground">
-                      {o.items}
-                    </td>
-                    <td className="py-3 font-medium text-foreground">
-                      {o.total}
-                    </td>
-                    <td className="py-3">
-                      <span
-                        className={`text-xs font-medium px-2.5 py-1 rounded-lg ${
-                          statusColor[o.status]
-                        }`}
-                      >
-                        {o.status}
-                      </span>
+                {loading ? (
+                  <tr>
+                    <td colSpan="5" className="text-center py-6 text-muted-foreground">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-dark mx-auto mb-2"></div>
+                      Loading orders...
                     </td>
                   </tr>
-                ))}
+                ) : data.recentOrders && data.recentOrders.length > 0 ? (
+                  data.recentOrders.map((o, index) => (
+                    <tr
+                      key={o.id || index}
+                      className="border-b border-border/50 last:border-0"
+                    >
+                      <td className="py-3 font-medium text-foreground">
+                        {o.id}
+                      </td>
+                      <td className="py-3 text-muted-foreground">
+                        {o.customer}
+                      </td>
+                      <td className="py-3 text-muted-foreground">
+                        {o.items}
+                      </td>
+                      <td className="py-3 font-medium text-foreground">
+                        {o.total}
+                      </td>
+                      <td className="py-3">
+                        <span
+                          className={`text-xs font-medium px-2.5 py-1 rounded-lg ${
+                            statusColor[o.status] || "bg-secondary text-secondary-foreground"
+                          }`}
+                        >
+                          {o.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="text-center py-6 text-muted-foreground">
+                      No recent orders found
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

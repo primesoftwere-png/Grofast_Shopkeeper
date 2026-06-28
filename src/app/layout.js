@@ -1,4 +1,5 @@
 import { Plus_Jakarta_Sans, DM_Sans } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -24,7 +25,10 @@ export default function RootLayout({ children }) {
       lang="en"
       className={`${plusJakarta.variable} ${dmSans.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Toaster position="top-right" />
+        {children}
+      </body>
     </html>
   );
 }

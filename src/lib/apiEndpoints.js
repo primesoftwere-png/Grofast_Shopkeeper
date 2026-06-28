@@ -97,6 +97,7 @@ export const SETTLEMENT_ENDPOINTS = {
 export const WALLET_ENDPOINTS = {
   DETAILS: '/api/shopkeeper/wallet',
   PAYOUT: '/api/shopkeeper/wallet/payout',
+  ADD_BALANCE: '/api/shopkeeper/wallet/add-balance',
 };
 
 // ========================================
@@ -111,5 +112,12 @@ export const ADVERTISEMENT_ENDPOINTS = {
 };
 
 // ========================================
-// TOTAL: 52 SHOPKEEPER APIs
+// DASHBOARD APIs (1 API)
+// ========================================
+export const DASHBOARD_ENDPOINTS = {
+  GET_DATA: '/api/shopkeeper/dashboard',
+};
+
+// ========================================
+// TOTAL: 53 SHOPKEEPER APIs
 // ========================================

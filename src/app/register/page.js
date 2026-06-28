@@ -1,4 +1,5 @@
 "use client";
+import { toast } from "react-hot-toast";
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -102,7 +103,7 @@ const Register = () => {
       
       // Check if registration was successful
       if (response && response.success) {
-        alert(`✅ ${response.message || 'Registration successful! Awaiting admin approval.'}`);
+        toast.success(`✅ ${response.message || 'Registration successful! Awaiting admin approval.'}`);
         router.push("/login");
       } else {
         setError(response?.message || "Registration failed. Please try again.");
@@ -492,7 +493,7 @@ const Register = () => {
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></span>
-                Submitting...
+                <span className="flex items-center gap-2 justify-center"><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</span>
               </span>
             ) : step === 3 ? (
               <>

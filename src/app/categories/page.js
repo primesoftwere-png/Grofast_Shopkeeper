@@ -1,4 +1,5 @@
 "use client";
+import { toast } from "react-hot-toast";
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -102,11 +103,11 @@ const Categories = () => {
     try {
       const response = await deleteCategory(categoryId);
       console.log('Delete category response:', response);
-      alert('Category deleted successfully!');
+      toast.success('Category deleted successfully!');
       await fetchCategories(); // Refresh list
     } catch (err) {
       console.error('Error deleting category:', err);
-      alert(err.message || err.error || 'Failed to delete category');
+      toast.error(err.message || err.error || 'Failed to delete category');
     }
   };
 

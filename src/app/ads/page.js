@@ -1,9 +1,10 @@
 "use client";
+import { toast } from "react-hot-toast";
 
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { Plus, Edit, Trash2, X, Image as ImageIcon } from "lucide-react";
+import { Plus, Edit, Trash2, X, Image as ImageIcon , Loader2} from "lucide-react";
 import { getAdvertisements, createAdvertisement, updateAdvertisement, deleteAdvertisement } from "@/services/advertisementService";
 
 const AdsPage = () => {
@@ -171,16 +172,16 @@ const AdsPage = () => {
 
       if (modalMode === "add") {
         await createAdvertisement(data);
-        alert("Advertisement created successfully!");
+        toast.success("Advertisement created successfully!");
       } else {
         await updateAdvertisement(currentAd._id || currentAd.id, data);
-        alert("Advertisement updated successfully!");
+        toast.success("Advertisement updated successfully!");
       }
       handleCloseModal();
       fetchAds();
     } catch (err) {
       console.error("Error submitting ad:", err);
-      alert(err.message || err.error || "Failed to save advertisement.");
+      toast.error(err.message || err.error || "Failed to save advertisement.");
     } finally {
       setIsSubmitting(false);
     }
@@ -190,11 +191,11 @@ const AdsPage = () => {
     if (!confirm('Are you sure you want to delete this advertisement?')) return;
     try {
       await deleteAdvertisement(adId);
-      alert('Advertisement deleted successfully!');
+      toast.success('Advertisement deleted successfully!');
       fetchAds();
     } catch (err) {
       console.error('Error deleting ad:', err);
-      alert(err.message || err.error || 'Failed to delete advertisement.');
+      toast.error(err.message || err.error || 'Failed to delete advertisement.');
     }
   };
 
@@ -462,7 +463,7 @@ const AdsPage = () => {
                     disabled={isSubmitting}
                     className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting ? "Saving..." : "Save Advertisement"}
+                    {isSubmitting ? (<span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Saving...</span>) : "Save Advertisement"}
                   </button>
                 </div>
               </form>

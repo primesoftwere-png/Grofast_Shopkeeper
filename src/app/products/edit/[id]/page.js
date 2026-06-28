@@ -1,10 +1,11 @@
 "use client";
+import { toast } from "react-hot-toast";
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { ArrowLeft, Upload, X } from "lucide-react";
+import { ArrowLeft, Upload, X , Loader2} from "lucide-react";
 import { getProductById, updateProduct } from "@/services/productService";
 import { getAllCategories } from "@/services/categoryService";
 
@@ -97,7 +98,7 @@ const EditProduct = () => {
       }
     } catch (err) {
       console.error('Error fetching product:', err);
-      alert('Failed to load product details');
+      toast.error('Failed to load product details');
       router.push('/products');
     } finally {
       setFetchingProduct(false);
@@ -140,19 +141,19 @@ const EditProduct = () => {
     e.preventDefault();
     
     if (!formData.productName.trim()) {
-      alert('Please enter product name');
+      toast.error('Please enter product name');
       return;
     }
     if (!formData.productDescription.trim()) {
-      alert('Please enter product description');
+      toast.error('Please enter product description');
       return;
     }
     if (!formData.productPrice || formData.productPrice <= 0) {
-      alert('Please enter valid price');
+      toast.error('Please enter valid price');
       return;
     }
     if (!formData.productQuantity || formData.productQuantity < 0) {
-      alert('Please enter valid quantity');
+      toast.error('Please enter valid quantity');
       return;
     }
 
@@ -178,11 +179,11 @@ const EditProduct = () => {
       const response = await updateProduct(productId, data);
       console.log('Update product response:', response);
       
-      alert('Product updated successfully!');
+      toast.success('Product updated successfully!');
       router.push('/products');
     } catch (err) {
       console.error('Error updating product:', err);
-      alert(err.message || err.error || 'Failed to update product');
+      toast.error(err.message || err.error || 'Failed to update product');
     } finally {
       setLoading(false);
     }
@@ -389,7 +390,7 @@ const EditProduct = () => {
                 disabled={loading}
                 className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium disabled:opacity-50"
               >
-                {loading ? 'Updating...' : 'Update Product'}
+                {loading ? (<span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Updating...</span>) : 'Update Product'}
               </button>
             </div>
           </form>
