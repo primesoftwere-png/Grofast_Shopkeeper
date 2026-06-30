@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { Plus, Search, Edit, Trash2, Filter, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { getAllProducts, deleteProduct } from "@/services/productService";
 import { getAllCategories } from "@/services/categoryService";
+import { API_BASE_URL } from "@/lib/axios";
 
 const Products = () => {
   const router = useRouter();
@@ -421,7 +422,7 @@ const Products = () => {
                     <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-2xl">
                       {p.productImage ? (
                         <img 
-                          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000'}/uploads/${p.productImage}`} 
+                          src={`${API_BASE_URL}/uploads/${p.productImage}`} 
                           alt={p.productName}
                           className="w-full h-full object-cover rounded-xl"
                           onError={(e) => {

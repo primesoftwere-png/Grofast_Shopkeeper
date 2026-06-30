@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Plus, Edit, Trash2, X, Image as ImageIcon , Loader2} from "lucide-react";
 import { getAdvertisements, createAdvertisement, updateAdvertisement, deleteAdvertisement } from "@/services/advertisementService";
+import { API_BASE_URL } from "@/lib/axios";
 
 const AdsPage = () => {
   const [ads, setAds] = useState([]);
@@ -70,7 +71,7 @@ const AdsPage = () => {
         image: null,
       });
       if (ad.image) {
-        setImagePreview(`${process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000'}/uploads/${ad.image}`);
+        setImagePreview(`${API_BASE_URL}/uploads/${ad.image}`);
       } else {
         setImagePreview("");
       }
@@ -249,7 +250,7 @@ const AdsPage = () => {
                   <div className="relative h-40 bg-muted flex items-center justify-center">
                     {ad.image ? (
                       <img
-                        src={`${process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000'}/uploads/${ad.image}`}
+                        src={`${API_BASE_URL}/uploads/${ad.image}`}
                         alt={ad.title}
                         className="w-full h-full object-cover"
                         onError={(e) => {

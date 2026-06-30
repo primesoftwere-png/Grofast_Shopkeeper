@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { ArrowLeft, Upload, X , Loader2} from "lucide-react";
 import { getProductById, updateProduct } from "@/services/productService";
 import { getAllCategories } from "@/services/categoryService";
+import { API_BASE_URL } from "@/lib/axios";
 
 const EditProduct = () => {
   const router = useRouter();
@@ -91,7 +92,7 @@ const EditProduct = () => {
         
         // Set image preview if exists
         if (product.productImage) {
-          setImagePreview(`${process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000'}/uploads/${product.productImage}`);
+          setImagePreview(`${API_BASE_URL}/uploads/${product.productImage}`);
         }
       } else {
         throw new Error('Product data not found in response');

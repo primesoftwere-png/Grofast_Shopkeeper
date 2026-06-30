@@ -7,7 +7,10 @@ export default function ApiTest() {
   
   useEffect(() => {
     // Read from environment variable, fallback to localhost
-    const url = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000';
+    let url = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000';
+    if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+      url = `https://${url}`;
+    }
     setApiUrl(url);
     console.log('🔧 Axios Base URL:', url);
     console.log('🔧 Example Login URL:', `${url}/api/shopkeeper/auth/login`);

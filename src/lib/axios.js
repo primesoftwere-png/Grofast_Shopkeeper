@@ -1,7 +1,14 @@
 import axios from 'axios';
 
 // API Base URL - Read from environment variable, fallback to localhost
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000';
+let apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000';
+
+// Ensure the URL has a protocol (http/https), otherwise browsers treat it as a relative path
+if (apiBaseUrl && !apiBaseUrl.startsWith('http://') && !apiBaseUrl.startsWith('https://')) {
+  apiBaseUrl = `https://${apiBaseUrl}`;
+}
+
+export const API_BASE_URL = apiBaseUrl;
 
 // Create axios instance
 const axiosInstance = axios.create({

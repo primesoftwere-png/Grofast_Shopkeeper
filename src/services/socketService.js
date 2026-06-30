@@ -1,9 +1,13 @@
 import { io } from 'socket.io-client';
 import { getToken, getUser } from '@/lib/axios';
 
-const normalizeSocketUrl = (url) => (url || 'http://172.20.10.5:8000')
-  .replace(/\/api\/?$/, '')
-  .replace(/\/$/, '');
+const normalizeSocketUrl = (url) => {
+  let normalizedUrl = url || 'http://172.20.10.5:8000';
+  if (normalizedUrl && !normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+    normalizedUrl = `https://${normalizedUrl}`;
+  }
+  return normalizedUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
+};
 
 const SOCKET_URL = normalizeSocketUrl(
   process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000'
