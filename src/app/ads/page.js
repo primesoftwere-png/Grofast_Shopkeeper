@@ -7,6 +7,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { Plus, Edit, Trash2, X, Image as ImageIcon , Loader2} from "lucide-react";
 import { getAdvertisements, createAdvertisement, updateAdvertisement, deleteAdvertisement } from "@/services/advertisementService";
 import { API_BASE_URL } from "@/lib/axios";
+import ShoppingCartLoader from "@/components/ShoppingCartLoader";
 
 const AdsPage = () => {
   const [ads, setAds] = useState([]);
@@ -230,10 +231,7 @@ const AdsPage = () => {
 
           {/* Ads Grid */}
           {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="text-muted-foreground mt-2">Loading advertisements...</p>
-            </div>
+            <ShoppingCartLoader />
           ) : ads.length === 0 ? (
             <div className="text-center py-12 bg-card rounded-2xl border border-border/50">
               <div className="text-4xl mb-3">📢</div>

@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Wallet, ArrowUpRight, History, CreditCard, Banknote, RefreshCcw , Loader2} from "lucide-react";
 import { getWalletDetails, addBalance as addBalanceService } from "@/services/walletService";
 import { getSettlementSummary, getSettlements, requestSettlement } from "@/services/settlementService";
+import ShoppingCartLoader from "@/components/ShoppingCartLoader";
 
 const WalletPage = () => {
   const [wallet, setWallet] = useState(null);
@@ -99,7 +100,7 @@ const WalletPage = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center p-10"><RefreshCcw className="animate-spin text-primary w-8 h-8" /></div>
+          <ShoppingCartLoader />
         ) : (
           <>
             {/* Top Cards: Wallet Balances */}

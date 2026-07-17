@@ -13,6 +13,7 @@ import {
   initializeSocket
 } from "@/services/socketService";
 import { getUser } from "@/lib/axios";
+import ShoppingCartLoader from "@/components/ShoppingCartLoader";
 
 export default function ChatPage() {
   const [conversations, setConversations] = useState([]);
@@ -162,9 +163,7 @@ export default function ChatPage() {
           
           <div className="flex-1 overflow-y-auto">
             {isLoadingConversations ? (
-              <div className="flex justify-center items-center h-full">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
+              <ShoppingCartLoader />
             ) : conversations.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground text-sm">
                 No active conversations yet
@@ -226,9 +225,7 @@ export default function ChatPage() {
               {/* Chat Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/20">
                 {isLoadingMessages ? (
-                  <div className="flex justify-center items-center h-full">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                  </div>
+                  <ShoppingCartLoader />
                 ) : messages.length === 0 ? (
                   <div className="h-full flex flex-col justify-center items-center text-muted-foreground">
                     <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">

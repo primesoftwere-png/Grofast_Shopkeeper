@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getToken } from '@/lib/axios';
+import ShoppingCartLoader from "@/components/ShoppingCartLoader";
 
 export default function ProtectedRoute({ children }) {
   const router = useRouter();
@@ -26,14 +27,7 @@ export default function ProtectedRoute({ children }) {
 
   // Show loading state while checking authentication
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-          <div className="flex flex-col items-center gap-2"><Loader2 className="w-6 h-6 animate-spin text-primary" /><span>Loading...</span></div>
-        </div>
-      </div>
-    );
+    return <ShoppingCartLoader />;
   }
 
   // Only render children if authenticated

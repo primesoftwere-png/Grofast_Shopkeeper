@@ -8,6 +8,7 @@ import { ShoppingCart, Clock, CheckCircle, RotateCcw } from "lucide-react";
 import { acceptOrder, markOrderReady, cancelOrder } from "@/services/orderService";
 import axiosInstance from "@/lib/axios";
 import { initializeSocket, onNewOrder, offNewOrder, onOrderStatus, offOrderStatus, onDeliveryAssigned, offDeliveryAssigned, joinShopkeeperRooms } from "@/services/socketService";
+import ShoppingCartLoader from "@/components/ShoppingCartLoader";
 
 const tabs = [
   { label: "All", status: "ALL", icon: Clock },
@@ -495,10 +496,7 @@ const Orders = () => {
 
         {/* Loading State */}
         {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="text-muted-foreground mt-2">Loading orders...</p>
-          </div>
+          <ShoppingCartLoader />
         ) : orders.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-2xl border border-border/50">
             <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-3" />

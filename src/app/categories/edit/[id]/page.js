@@ -7,6 +7,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ArrowLeft, X , Loader2} from "lucide-react";
 import { getCategoryById, updateCategory, getAllCategories } from "@/services/categoryService";
+import ShoppingCartLoader from "@/components/ShoppingCartLoader";
 
 const EditCategory = () => {
   const router = useRouter();
@@ -188,10 +189,7 @@ const EditCategory = () => {
     return (
       <ProtectedRoute>
         <DashboardLayout>
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="text-muted-foreground mt-2">Loading category...</p>
-          </div>
+          <ShoppingCartLoader />
         </DashboardLayout>
       </ProtectedRoute>
     );

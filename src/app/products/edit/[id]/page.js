@@ -9,6 +9,7 @@ import { ArrowLeft, Upload, X , Loader2} from "lucide-react";
 import { getProductById, updateProduct } from "@/services/productService";
 import { getAllCategories } from "@/services/categoryService";
 import { API_BASE_URL } from "@/lib/axios";
+import ShoppingCartLoader from "@/components/ShoppingCartLoader";
 
 const EditProduct = () => {
   const router = useRouter();
@@ -194,10 +195,7 @@ const EditProduct = () => {
     return (
       <ProtectedRoute>
         <DashboardLayout>
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="text-muted-foreground mt-2">Loading product...</p>
-          </div>
+          <ShoppingCartLoader />
         </DashboardLayout>
       </ProtectedRoute>
     );

@@ -9,6 +9,7 @@ import { Plus, Search, Edit, Trash2, Filter, ChevronLeft, ChevronRight, X } from
 import { getAllProducts, deleteProduct } from "@/services/productService";
 import { getAllCategories } from "@/services/categoryService";
 import { API_BASE_URL } from "@/lib/axios";
+import ShoppingCartLoader from "@/components/ShoppingCartLoader";
 
 const Products = () => {
   const router = useRouter();
@@ -395,10 +396,7 @@ const Products = () => {
 
         {/* Loading State */}
         {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="text-muted-foreground mt-2">Loading products...</p>
-          </div>
+          <ShoppingCartLoader />
         ) : products.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-2xl border border-border/50">
             <div className="text-4xl mb-3">📦</div>

@@ -12,6 +12,7 @@ import {
 } from "@/services/settingsService";
 import dynamic from "next/dynamic";
 import { User, MapPin, Clock, CreditCard, Lock, Save , Loader2} from "lucide-react";
+import ShoppingCartLoader from "@/components/ShoppingCartLoader";
 
 // Dynamically import the map so SSR doesn't crash on window object
 const LocationMap = dynamic(() => import("@/components/LocationMap"), { ssr: false });
@@ -160,9 +161,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex h-full items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
+        <ShoppingCartLoader />
       </DashboardLayout>
     );
   }

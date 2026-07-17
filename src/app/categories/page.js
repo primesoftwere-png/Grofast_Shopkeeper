@@ -7,6 +7,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Plus, Edit, Trash2, Filter, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { getAllCategories, deleteCategory } from "@/services/categoryService";
+import ShoppingCartLoader from "@/components/ShoppingCartLoader";
 
 const Categories = () => {
   const router = useRouter();
@@ -334,10 +335,7 @@ const Categories = () => {
 
         {/* Loading State */}
         {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="text-muted-foreground mt-2">Loading categories...</p>
-          </div>
+          <ShoppingCartLoader />
         ) : categories.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-2xl border border-border/50">
             <div className="text-4xl mb-3">📂</div>

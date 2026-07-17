@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Package, AlertTriangle, TrendingDown } from "lucide-react";
 import { getInventory, getLowStockProducts, getOutOfStockProducts } from "@/services/inventoryService";
+import ShoppingCartLoader from "@/components/ShoppingCartLoader";
 
 export default function InventoryPage() {
   const [inventory, setInventory] = useState([]);
@@ -107,10 +108,7 @@ export default function InventoryPage() {
 
         {/* Loading State */}
         {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="text-muted-foreground mt-2">Loading inventory...</p>
-          </div>
+          <ShoppingCartLoader />
         ) : (
           <div className="bg-card rounded-2xl p-5 shadow-card border border-border/50">
             <h3 className="font-semibold text-foreground mb-4">Inventory Overview</h3>

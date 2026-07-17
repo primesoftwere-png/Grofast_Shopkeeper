@@ -18,6 +18,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { getDashboardData } from "@/services/dashboardService";
+import ShoppingCartLoader from "@/components/ShoppingCartLoader";
 
 const statusColor = {
   DELIVERED: "bg-primary/15 text-primary-dark",
@@ -75,9 +76,7 @@ const DashboardHome = () => {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-dark"></div>
-        </div>
+        <ShoppingCartLoader />
       ) : (
         <>
           {/* Stat Cards */}
